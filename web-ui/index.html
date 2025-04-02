@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PI-PVR Ultimate Media Stack</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container header-content">
+      <div class="logo">
+        <i class="fas fa-server"></i>
+        <span>PI-PVR Ultimate</span>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="#" class="active" data-tab="dashboard">Dashboard</a></li>
+          <li><a href="#" data-tab="install">Install</a></li>
+          <li><a href="#" data-tab="manage">Manage</a></li>
+          <li><a href="#" data-tab="settings">Settings</a></li>
+        </ul>
+      </nav>
+      <button class="theme-toggle" id="theme-toggle">
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="container">
+      <!-- Dashboard Tab -->
+      <div class="tab-content active" id="dashboard">
+        <h1 class="page-title">Dashboard</h1>
+        
+        <div class="card">
+          <div class="card-title">
+            <i class="fas fa-info-circle card-icon"></i>
+            System Information
+          </div>
+          <div id="system-info">Loading system information...</div>
+        </div>
+        
+        <div class="card">
+          <div class="card-title">
+            <i class="fas fa-chart-line card-icon"></i>
+            Resource Usage
+          </div>
+          <div id="resource-usage">
+            <div class="grid">
+              <div>
+                <h3>CPU Usage</h3>
+                <div class="progress-container">
+                  <div class="progress-bar" id="cpu-usage-bar" style="width: 0%;">
+                    <span class="progress-text">0%</span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3>Memory Usage</h3>
+                <div class="progress-container">
+                  <div class="progress-bar" id="memory-usage-bar" style="width: 0%;">
+                    <span class="progress-text">0%</span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3>Disk Usage</h3>
+                <div class="progress-container">
+                  <div class="progress-bar" id="disk-usage-bar" style="width: 0%;">
+                    <span class="progress-text">0%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <h2>Services</h2>
+        <div class="grid" id="services-grid">
+          <div class="card service-card">
+            <div class="service-card-header">
+              <h3>Loading services...</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Install Tab -->
+      <div class="tab-content" id="install">
+        <h1 class="page-title">Install PI-PVR Stack</h1>
+        
+        <div class="tab-container">
+          <div class="tabs">
+            <button class="tab active" data-install-tab="system-config">1. System Configuration</button>
+            <button class="tab" data-install-tab="arr-apps">2. Arr Applications</button>
+            <button class="tab" data-install-tab="download-clients">3. Download Clients</button>
+            <button class="tab" data-install-tab="media-servers">4. Media Servers</button>
+            <button class="tab" data-install-tab="utilities">5. Utilities</button>
+            <button class="tab" data-install-tab="summary">6. Summary</button>
+          </div>
+          
+          <!-- System Configuration Tab -->
+          <div class="tab-content active" id="system-config">
+            <div class="card">
+              <div class="card-title">Basic Configuration</div>
+              
+              <div class="form-group">
+                <label for="puid">User ID (PUID):</label>
+                <input type="number" id="puid" name="puid" value="1000">
+                <div class="tooltip">
+                  <i class="fas fa-question-circle"></i>
+                  <span class="tooltip-text">The user ID that will own the files. Run 'id' in the terminal to find your UID.</span>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="pgid">Group ID (PGID):</label>
+                <input type="number" id="pgid" name="pgid" value="1000">
+                <div class="tooltip">
+                  <i class="fas fa-question-circle"></i>
+                  <span class="tooltip-text">The group ID that will own the files. Run 'id' in the terminal to find your GID.</span>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="timezone">Timezone:</label>
+                <input type="text" id="timezone" name="timezone" value="Europe/London">
+              </div>
+              
+              <div class="form-group">
+                <label for="media_dir">Media Directory:</label>
+                <input type="text" id="media_dir" name="media_dir" value="/mnt/media">
+                <div class="tooltip">
+                  <i class="fas fa-question-circle"></i>
+                  <span class="tooltip-text">The directory where your media files are stored.</span>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="downloads_dir">Downloads Directory:</label>
+                <input type="text" id="downloads_dir" name="downloads_dir" value="/mnt/downloads">
+                <div class="tooltip">
+                  <i class="fas fa-question-circle"></i>
+                  <span class="tooltip-text">The directory where your downloads will be stored.</span>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="docker_dir">Docker Directory:</label>
+                <input type="text" id="docker_dir" name="docker_dir" value="/home/pi/docker">
+                <div class="tooltip">
+                  <i class="fas fa-question-circle"></i>
+                  <span class="tooltip-text">The directory where Docker configuration files will be stored.</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-title">VPN Configuration</div>
+              
+              <div class="form-group">
+                <label for="vpn_enabled">Enable VPN:</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="vpn_enabled" name="vpn_enabled" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div id="vpn-config-fields">
+                <div class="form-group">
+                  <label for="vpn_provider">VPN Provider:</label>
+                  <select id="vpn_provider" name="vpn_provider">
+                    <option value="private internet access">Private Internet Access</option>
+                    <option value="nordvpn">NordVPN</option>
+                    <option value="mullvad">Mullvad</option>
+                    <option value="surfshark">Surfshark</option>
+                    <option value="expressvpn">ExpressVPN</option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label for="vpn_username">VPN Username:</label>
+                  <input type="text" id="vpn_username" name="vpn_username">
+                </div>
+                
+                <div class="form-group">
+                  <label for="vpn_password">VPN Password:</label>
+                  <input type="password" id="vpn_password" name="vpn_password">
+                </div>
+                
+                <div class="form-group">
+                  <label for="vpn_region">Server Region:</label>
+                  <input type="text" id="vpn_region" name="vpn_region" value="Netherlands">
+                </div>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-title">Tailscale Configuration</div>
+              
+              <div class="form-group">
+                <label for="tailscale_enabled">Enable Tailscale:</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="tailscale_enabled" name="tailscale_enabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div id="tailscale-config-fields" style="display: none;">
+                <div class="form-group">
+                  <label for="tailscale_auth_key">Tailscale Auth Key (optional):</label>
+                  <input type="text" id="tailscale_auth_key" name="tailscale_auth_key">
+                  <div class="tooltip">
+                    <i class="fas fa-question-circle"></i>
+                    <span class="tooltip-text">Your Tailscale auth key. Leave blank to authorize manually later.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <button class="btn btn-primary" id="next-arr-apps">Next: Arr Applications</button>
+            </div>
+          </div>
+          
+          <!-- Arr Applications Tab -->
+          <div class="tab-content" id="arr-apps">
+            <div class="card">
+              <div class="card-title">Arr Applications</div>
+              
+              <div class="form-group">
+                <label for="sonarr_enabled">Sonarr (TV Shows):</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="sonarr_enabled" name="sonarr_enabled" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label for="radarr_enabled">Radarr (Movies):</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="radarr_enabled" name="radarr_enabled" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label for="prowlarr_enabled">Prowlarr (Indexer Management):</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="prowlarr_enabled" name="prowlarr_enabled" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label for="lidarr_enabled">Lidarr (Music):</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="lidarr_enabled" name="lidarr_enabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label for="readarr_enabled">Readarr (Books):</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="readarr_enabled" name="readarr_enabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label for="bazarr_enabled">Bazarr (Subtitles):</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="bazarr_enabled" name="bazarr_enabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <button class="btn btn-secondary" id="prev-system-config">Previous: System Configuration</button>
+              <button class="btn btn-primary" id="next-download-clients">Next: Download Clients</button>
+            </div>
+          </div>
+          
+          <!-- Download Clients Tab -->
+          <div class="tab-content" id="download-clients">
+            <div class="card">
+              <div class="card-title">Torrent Clients</div>
+              
+              <div class="form-group">
+                <label for="transmission_enabled">Transmission:</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="transmission_enabled" name="transmission_enabled" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label for="qbittorrent_enabled">qBittorrent:</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="qbittorrent_enabled" name="qbittorrent_enabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-title">Usenet Clients</div>
+              
+              <div class="form-group">
+                <label for="nzbget_enabled">NZBGet:</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="nzbget_enabled" name="nzbget_enabled" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label for="sabnzbd_enabled">SABnzbd:</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="sabnzbd_enabled" name="sabnzbd_enabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-title">Direct Download Clients</div>
+              
+              <div class="form-group">
+                <label for="jdownloader_enabled">JDownloader:</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="jdownloader_enabled" name="jdownloader_enabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <button class="btn btn-secondary" id="prev-arr-apps">Previous: Arr Applications</button>
+              <button class="btn btn-primary" id="next-media-servers">Next: Media Servers</button>
+            </div>
+          </div>
+          
+          <!-- Media Servers Tab -->
+          <div class="tab-content" id="media-servers">
+            <div class="card">
+              <div class="card-title">Media Servers</div>
+              
+              <div class="form-group">
+                <label for="jellyfin_enabled">Jellyfin (Open Source):</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="jellyfin_enabled" name="jellyfin_enabled" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label for="plex_enabled">Plex Media Server:</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="plex_enabled" name="plex_enabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label for="emby_enabled">Emby:</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="emby_enabled" name="emby_enabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <button class="btn btn-secondary" id="prev-download-clients">Previous: Download Clients</button>
+              <button class="btn btn-primary" id="next-utilities">Next: Utilities</button>
+            </div>
+          </div>
+          
+          <!-- Utilities Tab -->
+          <div class="tab-content" id="utilities">
+            <div class="card">
+              <div class="card-title">Utilities</div>
+              
+              <div class="form-group">
+                <label for="heimdall_enabled">Heimdall (Dashboard):</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="heimdall_enabled" name="heimdall_enabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label for="overseerr_enabled">Overseerr (Media Requests):</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="overseerr_enabled" name="overseerr_enabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label for="tautulli_enabled">Tautulli (Plex Monitoring):</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="tautulli_enabled" name="tautulli_enabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label for="portainer_enabled">Portainer (Docker Management):</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="portainer_enabled" name="portainer_enabled" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label for="nginx_proxy_manager_enabled">Nginx Proxy Manager:</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="nginx_proxy_manager_enabled" name="nginx_proxy_manager_enabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label for="get_iplayer_enabled">Get iPlayer:</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="get_iplayer_enabled" name="get_iplayer_enabled" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <button class="btn btn-secondary" id="prev-media-servers">Previous: Media Servers</button>
+              <button class="btn btn-primary" id="next-summary">Next: Summary</button>
+            </div>
+          </div>
+          
+          <!-- Summary Tab -->
+          <div class="tab-content" id="summary">
+            <div class="card">
+              <div class="card-title">Installation Summary</div>
+              
+              <div id="summary-content">
+                <!-- Dynamic content will be injected here -->
+              </div>
+              
+              <div id="installation-progress" style="display: none;">
+                <h3>Installation Progress</h3>
+                <div class="progress-container">
+                  <div class="progress-bar" id="installation-progress-bar" style="width: 0%;">
+                    <span class="progress-text">0%</span>
+                  </div>
+                </div>
+                <pre id="installation-log" style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; max-height: 300px; overflow-y: auto;"></pre>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <button class="btn btn-secondary" id="prev-utilities">Previous: Utilities</button>
+              <button class="btn btn-primary" id="start-installation">Start Installation</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Manage Tab -->
+      <div class="tab-content" id="manage">
+        <h1 class="page-title">Manage Services</h1>
+        
+        <div class="card">
+          <div class="card-title">Service Control</div>
+          
+          <div class="grid" id="manage-services-grid">
+            <div class="card service-card">
+              <div class="service-card-header">
+                <h3>Loading services...</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-title">Stack Operations</div>
+          
+          <div class="grid">
+            <div class="card">
+              <div class="card-title">Restart All Services</div>
+              <p>Restart all services in the stack.</p>
+              <button class="btn btn-primary" id="restart-all">Restart All</button>
+            </div>
+            
+            <div class="card">
+              <div class="card-title">Update Images</div>
+              <p>Update all Docker images to the latest versions.</p>
+              <button class="btn btn-primary" id="update-images">Update Images</button>
+            </div>
+            
+            <div class="card">
+              <div class="card-title">Backup Configuration</div>
+              <p>Backup your configuration files.</p>
+              <button class="btn btn-primary" id="backup-config">Backup Config</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Settings Tab -->
+      <div class="tab-content" id="settings">
+        <h1 class="page-title">Settings</h1>
+        
+        <div class="card">
+          <div class="card-title">System Configuration</div>
+          
+          <div class="form-group">
+            <label for="settings-puid">User ID (PUID):</label>
+            <input type="number" id="settings-puid" name="settings-puid" value="1000">
+          </div>
+          
+          <div class="form-group">
+            <label for="settings-pgid">Group ID (PGID):</label>
+            <input type="number" id="settings-pgid" name="settings-pgid" value="1000">
+          </div>
+          
+          <div class="form-group">
+            <label for="settings-timezone">Timezone:</label>
+            <input type="text" id="settings-timezone" name="settings-timezone" value="Europe/London">
+          </div>
+          
+          <div class="form-group">
+            <button class="btn btn-primary" id="save-settings">Save Settings</button>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-title">Danger Zone</div>
+          
+          <div class="form-group">
+            <button class="btn btn-danger" id="reset-config">Reset Configuration</button>
+            <button class="btn btn-danger" id="uninstall">Uninstall Stack</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 PI-PVR Ultimate Media Stack</p>
+  </footer>
+
+  <script src="static/js/app.js"></script>
+</body>
+</html>

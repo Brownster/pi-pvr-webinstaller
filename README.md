@@ -1,52 +1,39 @@
-🐳 Raspberry Pi Docker Stack with VPN, Tailscale, and Media Management
+# 🐳 PI-PVR Ultimate Media Stack Installer
 
-This project automates the setup of a Docker-based media server stack on a Raspberry Pi or any Linux-based system. It includes VPN integration, Tailscale for secure remote access, and popular media management tools. The stack is highly customizable, uses Docker Compose for easy deployment, and supports automatic updates via GitHub.
-Features
+**PI-PVR Ultimate Media Stack** is a comprehensive Docker-based media server solution with an intuitive web-based installer, designed specifically for Raspberry Pi and other Linux systems. It integrates VPN connectivity, secure remote access via Tailscale, and an extensive array of media management tools.
 
-    VPN Integration: Routes external traffic through a secure VPN container (using Gluetun).
-    Tailscale: Enables secure remote access to the server and Docker containers via Tailscale IP.
-    Media Management Tools:
-        🗂️ Jackett: Indexer proxy for torrent and Usenet sites.
-        🎥 Radarr: Movies download manager.
-        📺 Sonarr: TV shows download manager.
-        🌐 Transmission: Torrent downloader.
-        📦 NZBGet: Usenet downloader.
-        📻 Get IPlayer: BBC iPlayer downloader with SonarrAutoImport enabled.
-        🎛️ Jellyfin: Media server for streaming.
-    Watchtower: Automatically updates Docker containers running outside the VPN.
-    File Sharing:
-        Samba for Windows/macOS/Linux.
-        NFS for Linux-only environments.
-    Customizable: Easily modify container names, ports, and settings.
-    Automatic Updates: Pull the latest docker-compose.yml from GitHub and redeploy with a single command.
+## Features
 
-Requirements
+- **🔒 VPN Integration**: Routes external traffic through a secure VPN container (Gluetun), supporting multiple providers.
+- **🔗 Tailscale**: Enables secure remote access to your server and Docker containers via Tailscale IP.
+- **📺 Complete Media Management**:
+  - **Full "Arr" Suite**: Sonarr, Radarr, Lidarr, Readarr, Prowlarr, Bazarr
+  - **Flexible Download Clients**: Transmission, qBittorrent, NZBGet, SABnzbd, JDownloader
+  - **Multiple Media Servers**: Jellyfin, Plex, Emby
+  - **Specialized Tools**: Get IPlayer, Overseerr, Tautulli
+- **🔄 Modular Architecture**: Mix and match components to build your perfect setup.
+- **🖥️ Modern Web UI**: Easy-to-use interface for installation and management.
+- **📱 Mobile-Friendly**: Responsive design that works on all devices.
+- **🔍 Intelligent Monitoring**: Automated health checks and updates.
+- **🛡️ Security-Focused**: Built with best practices for keeping your media server secure.
 
-    Raspberry Pi or Linux-based system (tested on Raspberry Pi 5 with 8GB RAM).
-    Docker and Docker Compose installed (handled by the script if not already installed).
-    Private Internet Access as the VPN provider (others coming soon: AirVPN, Mullvad, NordVPN, etc.).
-    Tailscale account for secure remote access.
+## Requirements
 
-Installation
+- Raspberry Pi 4/5 or any Linux-based system (4GB+ RAM recommended)
+- Docker and Docker Compose (handled by the installer)
+- External storage for media files
+- Internet connection
+- VPN subscription for providers like PIA, NordVPN, etc. (optional but recommended)
+- Tailscale account for secure remote access (optional)
+
+## Installation
 
 ### Option 1: Command Line Installation
 
-    Clone this repository:
-
 ```bash
-git clone https://github.com/Brownster/PI-PVR.git
-cd PI-PVR
-```
-
-Make the setup script executable:
-
-```bash
+git clone https://github.com/Brownster/PI-PVR-0.1.git
+cd PI-PVR-0.1
 chmod +x pi-pvr.sh
-```
-
-Run the setup script:
-
-```bash
 ./pi-pvr.sh
 ```
 
@@ -74,113 +61,74 @@ chmod +x pi-pvr.sh
 ./pi-pvr.sh --web-installer
 ```
 
-Usage
-### Debug Mode
+## Usage
 
-Run with --debug to see detailed command outputs:
+### Modular Service Selection
 
-```bash
-./pi-pvr.sh --debug
-```
-
-### Update Docker Compose Stack
-
-Automatically fetch the latest docker-compose.yml from GitHub and redeploy:
+Create a custom stack with exactly the services you need:
 
 ```bash
-./pi-pvr.sh --update
+# Example: Full Arr suite with Jellyfin and Transmission
+./scripts/generate-compose.sh --arr-apps --media-server jellyfin --torrent-client transmission
+
+# Example: Complete media center with all components
+./scripts/generate-compose.sh --all
 ```
 
-Configuration
-Environment Variables
+### Service Management
 
-The script creates an .env file for managing sensitive data. Update this file as needed:
+Access your services via the web interface or directly from your browser:
 
-nano ~/docker/.env
+| Service | Default URL | Description |
+|---------|-------------|-------------|
+| Dashboard | http://\<IP\>:80 | Heimdall application dashboard |
+| Prowlarr | http://\<IP\>:9696 | Indexer management |
+| Sonarr | http://\<IP\>:8989 | TV show management |
+| Radarr | http://\<IP\>:7878 | Movie management |
+| Lidarr | http://\<IP\>:8686 | Music management |
+| Readarr | http://\<IP\>:8787 | Book management |
+| Bazarr | http://\<IP\>:6767 | Subtitle management |
+| Transmission | http://\<IP\>:9091 | Torrent client |
+| NZBGet | http://\<IP\>:6789 | Usenet client |
+| Jellyfin | http://\<IP\>:8096 | Open source media server |
+| Get iPlayer | http://\<IP\>:1935 | BBC iPlayer downloader |
 
-Example .env file:
+### Remote Access
 
-PIA_USERNAME=your_pia_username
-PIA_PASSWORD=your_pia_password
-TAILSCALE_AUTH_KEY=your_tailscale_auth_key
-TIMEZONE=Europe/London
-MOVIES_FOLDER="Movies"
-TVSHOWS_FOLDER="TVShows"
-DOWNLOADS="/mnt/storage/downloads"
+Access your media server from anywhere using Tailscale:
+- Replace `<IP>` with your Tailscale IP in service URLs
+- Enjoy secure, encrypted connections without port forwarding
 
-File Sharing
+## Advanced Configuration
 
-The script supports:
+### Custom Docker Compose
 
-    Samba: Ideal for cross-platform file sharing.
-    NFS: Recommended for Linux-only environments.
+Modify the environment variables in the `.env` file to customize your setup:
 
-Configure the method during setup or edit the .env file.
-Updating from GitHub
+```bash
+cp ./docker-compose/.env.example ./.env
+nano ./.env
+```
 
-The script supports pulling updates directly from a GitHub repository. Ensure DOCKER_COMPOSE_URL is set to your hosted docker-compose.yml file:
+### Hardware Acceleration
 
-DOCKER_COMPOSE_URL=https://raw.githubusercontent.com/yourusername/yourrepo/main/docker-compose.yml
+For improved transcoding performance on Raspberry Pi:
+- Uncomment the device mappings in the media server configuration
+- Enable hardware acceleration in your media server settings
 
-Services and Ports
-Service	Default Port	URL
-VPN	N/A	N/A
-Jackett	9117	http://<IP>:9117
-Sonarr	8989	http://<IP>:8989
-Radarr	7878	http://<IP>:7878
-Transmission	9091	http://<IP>:9091
-NZBGet	6789	http://<IP>:6789
-Get IPlayer	1935	http://<IP>:1935
-Jellyfin	8096	http://<IP>:8096
-Watchtower	N/A	(No Web UI)
+## Contributing
 
-Generated URLs are saved to:
+Contributions are welcome! Please check out our [ROADMAP.md](ROADMAP.md) for planned features and our [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-~/services_urls.txt
-
-How It Works
-
-    VPN Routing: All media applications route traffic through the VPN container. If the VPN disconnects, traffic is blocked for privacy.
-    Tailscale: Provides secure access to all services, bypassing the VPN when needed.
-    Watchtower: Updates Docker containers outside the VPN network for unrestricted registry access.
-
-Testing
-
-    Local Access: Open http://<local-IP>:<port> in a browser.
-
-    Tailscale Access: Replace <local-IP> with your Tailscale IP.
-
-    VPN Routing: Verify traffic routes through the VPN:
-
-docker exec -it transmission curl ifconfig.me
-
-Logs: Check Watchtower logs for updates:
-
-    docker logs watchtower
-
-Troubleshooting
-
-    VPN Issues: Ensure PIA credentials are correct in .env. Check VPN logs:
-
-docker logs vpn
-
-Tailscale Authentication:
-
-    sudo tailscale up
-
-Contributing
-
-Contributions are welcome! Open an issue or submit a pull request to enhance the project.
-License
+## License
 
 This project is licensed under the MIT License.
-Acknowledgements
 
-Special thanks to:
+## Acknowledgements
 
-    Docker
-    Gluetun VPN
-    LinuxServer.io
-    Sonarr
-    Radarr
-    Tailscale
+- [LinuxServer.io](https://linuxserver.io/) for their excellent Docker containers
+- [Servarr](https://wiki.servarr.com/) team for the "Arr" applications
+- [Jellyfin](https://jellyfin.org/), [Plex](https://www.plex.tv/), and [Emby](https://emby.media/) teams
+- [Gluetun](https://github.com/qdm12/gluetun) for the VPN container
+- [Tailscale](https://tailscale.com/) for secure networking
+- All open-source contributors that make this ecosystem possible

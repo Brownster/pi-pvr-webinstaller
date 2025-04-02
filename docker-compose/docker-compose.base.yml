@@ -1,0 +1,47 @@
+version: "3.8"
+
+# Base network and shared services
+networks:
+  vpn_network:
+    driver: bridge
+  app_network:
+    driver: bridge
+
+volumes:
+  config:
+    driver: local
+
+services:
+  vpn:
+    image: ${VPN_IMAGE:-qmcgaw/gluetun}:${IMAGE_RELEASE:-latest}
+    container_name: ${VPN_CONTAINER:-vpn}
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - ${DOCKER_DIR:-$HOME/docker}/vpn:/gluetun
+    env_file:
+      - ${DOCKER_DIR:-$HOME/docker}/vpn/.env
+    healthcheck:
+      test: curl --fail http://localhost:8000 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - vpn_network
+    # Ports will be added by individual service modules
+
+  watchtower:
+    image: ${WATCHTOWER_IMAGE:-containrrr/watchtower}:${IMAGE_RELEASE:-latest}
+    container_name: ${WATCHTOWER_CONTAINER:-watchtower}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=3600
+      - TZ=${TIMEZONE:-UTC}
+    restart: unless-stopped
+    networks:
+      - app_network

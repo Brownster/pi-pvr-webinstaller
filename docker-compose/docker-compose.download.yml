@@ -1,0 +1,93 @@
+version: "3.8"
+
+# Download clients
+services:
+  # Torrent client - Transmission
+  transmission:
+    image: ${TRANSMISSION_IMAGE:-linuxserver/transmission}:${IMAGE_RELEASE:-latest}
+    container_name: ${TRANSMISSION_CONTAINER:-transmission}
+    network_mode: "service:vpn"
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TIMEZONE:-UTC}
+      - UMASK_SET=022
+    volumes:
+      - ${DOCKER_DIR:-$HOME/docker}/transmission:/config
+      - ${DOWNLOADS_DIR:-/mnt/downloads}:/downloads
+      - ${WATCH_DIR:-/mnt/downloads/watch}:/watch
+    restart: unless-stopped
+    depends_on:
+      - vpn
+
+  # Torrent client - qBittorrent (alternative)
+  qbittorrent:
+    image: ${QBITTORRENT_IMAGE:-linuxserver/qbittorrent}:${IMAGE_RELEASE:-latest}
+    container_name: ${QBITTORRENT_CONTAINER:-qbittorrent}
+    network_mode: "service:vpn"
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TIMEZONE:-UTC}
+      - WEBUI_PORT=${QBITTORRENT_PORT:-8080}
+    volumes:
+      - ${DOCKER_DIR:-$HOME/docker}/qbittorrent:/config
+      - ${DOWNLOADS_DIR:-/mnt/downloads}:/downloads
+    restart: unless-stopped
+    depends_on:
+      - vpn
+    profiles:
+      - alt_torrent
+
+  # Usenet client - NZBGet
+  nzbget:
+    image: ${NZBGET_IMAGE:-linuxserver/nzbget}:${IMAGE_RELEASE:-latest}
+    container_name: ${NZBGET_CONTAINER:-nzbget}
+    network_mode: "service:vpn"
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TIMEZONE:-UTC}
+    volumes:
+      - ${DOCKER_DIR:-$HOME/docker}/nzbget:/config
+      - ${DOWNLOADS_DIR:-/mnt/downloads}:/downloads
+    restart: unless-stopped
+    depends_on:
+      - vpn
+
+  # Usenet client - SABnzbd (alternative)
+  sabnzbd:
+    image: ${SABNZBD_IMAGE:-linuxserver/sabnzbd}:${IMAGE_RELEASE:-latest}
+    container_name: ${SABNZBD_CONTAINER:-sabnzbd}
+    network_mode: "service:vpn"
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TIMEZONE:-UTC}
+    volumes:
+      - ${DOCKER_DIR:-$HOME/docker}/sabnzbd:/config
+      - ${DOWNLOADS_DIR:-/mnt/downloads}:/downloads
+    restart: unless-stopped
+    depends_on:
+      - vpn
+    profiles:
+      - alt_usenet
+
+  # Direct download client - JDownloader
+  jdownloader:
+    image: ${JDOWNLOADER_IMAGE:-jlesage/jdownloader-2}:${IMAGE_RELEASE:-latest}
+    container_name: ${JDOWNLOADER_CONTAINER:-jdownloader}
+    network_mode: "service:vpn"
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TIMEZONE:-UTC}
+      - VNC_PASSWORD=${VNC_PASSWORD:-password}
+    volumes:
+      - ${DOCKER_DIR:-$HOME/docker}/jdownloader:/config
+      - ${DOWNLOADS_DIR:-/mnt/downloads}:/downloads
+    restart: unless-stopped
+    depends_on:
+      - vpn
+    profiles:
+      - direct_download

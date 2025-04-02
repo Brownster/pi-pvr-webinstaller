@@ -1,0 +1,111 @@
+version: "3.8"
+
+# Utility services
+services:
+  # Heimdall - Application dashboard
+  heimdall:
+    image: ${HEIMDALL_IMAGE:-linuxserver/heimdall}:${IMAGE_RELEASE:-latest}
+    container_name: ${HEIMDALL_CONTAINER:-heimdall}
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TIMEZONE:-UTC}
+    volumes:
+      - ${DOCKER_DIR:-$HOME/docker}/heimdall:/config
+    ports:
+      - ${HEIMDALL_PORT:-80}:80
+      - ${HEIMDALL_HTTPS_PORT:-443}:443
+    restart: unless-stopped
+    networks:
+      - app_network
+    profiles:
+      - dashboard
+
+  # Overseerr - Media requests
+  overseerr:
+    image: ${OVERSEERR_IMAGE:-linuxserver/overseerr}:${IMAGE_RELEASE:-latest}
+    container_name: ${OVERSEERR_CONTAINER:-overseerr}
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TIMEZONE:-UTC}
+    volumes:
+      - ${DOCKER_DIR:-$HOME/docker}/overseerr:/config
+    ports:
+      - ${OVERSEERR_PORT:-5055}:5055
+    restart: unless-stopped
+    networks:
+      - app_network
+    profiles:
+      - requests
+
+  # Tautulli - Plex monitoring
+  tautulli:
+    image: ${TAUTULLI_IMAGE:-linuxserver/tautulli}:${IMAGE_RELEASE:-latest}
+    container_name: ${TAUTULLI_CONTAINER:-tautulli}
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TIMEZONE:-UTC}
+    volumes:
+      - ${DOCKER_DIR:-$HOME/docker}/tautulli:/config
+      - ${DOCKER_DIR:-$HOME/docker}/plex/Library/Application Support/Plex Media Server/Logs:/logs:ro
+    ports:
+      - ${TAUTULLI_PORT:-8181}:8181
+    restart: unless-stopped
+    networks:
+      - app_network
+    profiles:
+      - monitoring
+
+  # Portainer - Docker management
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    environment:
+      - TZ=${TIMEZONE:-UTC}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DOCKER_DIR:-$HOME/docker}/portainer:/data
+    ports:
+      - ${PORTAINER_PORT:-9000}:9000
+      - ${PORTAINER_EDGE_PORT:-8000}:8000
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  # Nginx Proxy Manager - Reverse proxy
+  nginx_proxy_manager:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: nginx_proxy_manager
+    ports:
+      - '80:80'
+      - '443:443'
+      - '81:81'
+    volumes:
+      - ${DOCKER_DIR:-$HOME/docker}/nginx-proxy-manager/data:/data
+      - ${DOCKER_DIR:-$HOME/docker}/nginx-proxy-manager/letsencrypt:/etc/letsencrypt
+    restart: unless-stopped
+    networks:
+      - app_network
+    profiles:
+      - proxy
+
+  # Get IPlayer
+  get_iplayer:
+    image: ${GET_IPLAYER_IMAGE:-ghcr.io/thespad/get_iplayer}:${IMAGE_RELEASE:-latest}
+    container_name: ${GET_IPLAYER_CONTAINER:-get_iplayer}
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TIMEZONE:-UTC}
+      - INCLUDERADIO=${INCLUDERADIO:-true}
+      - ENABLEIMPORT=${ENABLEIMPORT:-true}
+    volumes:
+      - ${DOCKER_DIR:-$HOME/docker}/get_iplayer/config:/config
+      - ${DOWNLOADS_DIR:-/mnt/downloads}/complete:/downloads
+    ports:
+      - ${GET_IPLAYER_PORT:-1935}:1935
+    restart: unless-stopped
+    networks:
+      - app_network

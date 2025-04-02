@@ -1,0 +1,109 @@
+version: "3.8"
+
+# Core "Arr" applications
+services:
+  # Indexer management
+  prowlarr:
+    image: ${PROWLARR_IMAGE:-linuxserver/prowlarr}:${IMAGE_RELEASE:-latest}
+    container_name: ${PROWLARR_CONTAINER:-prowlarr}
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TIMEZONE:-UTC}
+    volumes:
+      - ${DOCKER_DIR:-$HOME/docker}/prowlarr:/config
+    ports:
+      - ${PROWLARR_PORT:-9696}:9696
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  # TV shows
+  sonarr:
+    image: ${SONARR_IMAGE:-linuxserver/sonarr}:${IMAGE_RELEASE:-latest}
+    container_name: ${SONARR_CONTAINER:-sonarr}
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TIMEZONE:-UTC}
+    volumes:
+      - ${DOCKER_DIR:-$HOME/docker}/sonarr:/config
+      - ${MEDIA_DIR:-/mnt/media}/tv:/tv
+      - ${DOWNLOADS_DIR:-/mnt/downloads}:/downloads
+    ports:
+      - ${SONARR_PORT:-8989}:8989
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  # Movies
+  radarr:
+    image: ${RADARR_IMAGE:-linuxserver/radarr}:${IMAGE_RELEASE:-latest}
+    container_name: ${RADARR_CONTAINER:-radarr}
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TIMEZONE:-UTC}
+    volumes:
+      - ${DOCKER_DIR:-$HOME/docker}/radarr:/config
+      - ${MEDIA_DIR:-/mnt/media}/movies:/movies
+      - ${DOWNLOADS_DIR:-/mnt/downloads}:/downloads
+    ports:
+      - ${RADARR_PORT:-7878}:7878
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  # Music
+  lidarr:
+    image: ${LIDARR_IMAGE:-linuxserver/lidarr}:${IMAGE_RELEASE:-latest}
+    container_name: ${LIDARR_CONTAINER:-lidarr}
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TIMEZONE:-UTC}
+    volumes:
+      - ${DOCKER_DIR:-$HOME/docker}/lidarr:/config
+      - ${MEDIA_DIR:-/mnt/media}/music:/music
+      - ${DOWNLOADS_DIR:-/mnt/downloads}:/downloads
+    ports:
+      - ${LIDARR_PORT:-8686}:8686
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  # Books
+  readarr:
+    image: ${READARR_IMAGE:-linuxserver/readarr}:${READARR_TAG:-develop}
+    container_name: ${READARR_CONTAINER:-readarr}
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TIMEZONE:-UTC}
+    volumes:
+      - ${DOCKER_DIR:-$HOME/docker}/readarr:/config
+      - ${MEDIA_DIR:-/mnt/media}/books:/books
+      - ${DOWNLOADS_DIR:-/mnt/downloads}:/downloads
+    ports:
+      - ${READARR_PORT:-8787}:8787
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  # Subtitles
+  bazarr:
+    image: ${BAZARR_IMAGE:-linuxserver/bazarr}:${IMAGE_RELEASE:-latest}
+    container_name: ${BAZARR_CONTAINER:-bazarr}
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TIMEZONE:-UTC}
+    volumes:
+      - ${DOCKER_DIR:-$HOME/docker}/bazarr:/config
+      - ${MEDIA_DIR:-/mnt/media}/movies:/movies
+      - ${MEDIA_DIR:-/mnt/media}/tv:/tv
+    ports:
+      - ${BAZARR_PORT:-6767}:6767
+    restart: unless-stopped
+    networks:
+      - app_network
