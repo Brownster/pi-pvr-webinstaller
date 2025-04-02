@@ -1,6 +1,6 @@
 # 🐳 PI-PVR Ultimate Media Stack Installer
 
-**PI-PVR Ultimate Media Stack** is a comprehensive Docker-based media server solution with an intuitive web-based installer, designed specifically for Raspberry Pi and other Linux systems. It integrates VPN connectivity, secure remote access via Tailscale, and an extensive array of media management tools.
+**PI-PVR Ultimate Media Stack** is a comprehensive Docker-based media server solution with an intuitive web-based installer, designed for both Raspberry Pi and x86/x64 Linux systems. It intelligently detects your hardware and configures services optimally for your system. With support for VPN connectivity, secure remote access via Tailscale, and an extensive array of media management tools, it works on everything from a Raspberry Pi to a powerful desktop.
 
 ## Features
 
@@ -11,6 +11,11 @@
   - **Flexible Download Clients**: Transmission, qBittorrent, NZBGet, SABnzbd, JDownloader
   - **Multiple Media Servers**: Jellyfin, Plex, Emby
   - **Specialized Tools**: Get IPlayer, Overseerr, Tautulli
+- **🧠 Smart System Detection**:
+  - **Hardware Acceleration**: Automatically detects and configures GPU/CPU transcoding (VAAPI, NVDEC, V4L2)
+  - **Cross-Platform**: Works on Raspberry Pi, Desktop Linux, and Servers
+  - **Adaptive Configuration**: Optimizes settings for your specific hardware
+- **🌐 Remote Installation**: Install directly from your laptop to your Raspberry Pi or server
 - **🔄 Modular Architecture**: Mix and match components to build your perfect setup.
 - **🖥️ Modern Web UI**: Easy-to-use interface for installation and management.
 - **📱 Mobile-Friendly**: Responsive design that works on all devices.
@@ -44,22 +49,31 @@ Follow the on-screen prompts to configure the environment, VPN, and file sharing
 For a more user-friendly installation experience with a web interface:
 
 ```bash
-chmod +x web-install.sh
-./web-install.sh
+chmod +x start.sh
+./start.sh
 ```
 
-This will start a web-based installer accessible at `http://<your-pi-ip>:8080` where you can:
+Then select `Web-based installation` from the menu. This will start a web-based installer accessible at `http://<your-pi-ip>:8080` where you can:
 - Configure all settings through an intuitive interface
 - Monitor installation progress in real-time
 - Easily reconfigure components after installation
 - Access a dashboard for managing your media server
 
-Alternatively, you can run:
+### Option 3: Remote Installation
+
+To install from your laptop directly to a remote Raspberry Pi or server:
 
 ```bash
-chmod +x pi-pvr.sh
-./pi-pvr.sh --web-installer
+chmod +x start.sh
+./start.sh
 ```
+
+Then select `Remote installation` from the menu. You'll be prompted to enter:
+- Remote username (e.g., `pi`)
+- Remote hostname or IP (e.g., `raspberrypi.local` or `192.168.1.100`)
+- SSH port (default: 22)
+- Installation directory (default: `/home/pi/pi-pvr`)
+- Installation mode (`web` or `cli`)
 
 ## Usage
 
@@ -112,9 +126,16 @@ nano ./.env
 
 ### Hardware Acceleration
 
-For improved transcoding performance on Raspberry Pi:
-- Uncomment the device mappings in the media server configuration
-- Enable hardware acceleration in your media server settings
+The installer automatically detects your hardware and configures the appropriate transcoding method:
+
+- **Raspberry Pi**: Uses V4L2 hardware acceleration (VideoCore)
+- **Intel/AMD**: Uses VAAPI hardware acceleration
+- **NVIDIA**: Uses NVDEC hardware acceleration
+- **Other Systems**: Falls back to software transcoding
+
+After installation, hardware acceleration should be ready to use. You only need to:
+1. Enable hardware acceleration in your media server settings
+2. Choose the correct acceleration method (detected automatically)
 
 ## Contributing
 

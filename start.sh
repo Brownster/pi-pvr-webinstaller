@@ -8,6 +8,9 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Get script directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
 # Print banner
 echo -e "${BLUE}"
 echo "  _____   _____       _____  __      __  _____    "
@@ -19,6 +22,59 @@ echo " |_|     |_____|     |_|         \/     |_|  \_\  "
 echo "                                                  "
 echo -e "${GREEN}      Ultimate Media Stack Installer${NC}"
 echo ""
+
+# Detect system information
+echo "Detecting system information..."
+if [[ -x "$SCRIPT_DIR/scripts/detect-system.sh" ]]; then
+  SYSTEM_INFO=$(bash "$SCRIPT_DIR/scripts/detect-system.sh")
+  
+  # Extract architecture
+  ARCH=$(echo "$SYSTEM_INFO" | grep -o '"architecture": "[^"]*"' | cut -d'"' -f4)
+  
+  # Extract OS information
+  OS_NAME=$(echo "$SYSTEM_INFO" | grep -o '"name": "[^"]*"' | head -n1 | cut -d'"' -f4)
+  OS_VERSION=$(echo "$SYSTEM_INFO" | grep -o '"version": "[^"]*"' | head -n1 | cut -d'"' -f4)
+  
+  # Extract Raspberry Pi information
+  IS_RASPBERRY_PI=$(echo "$SYSTEM_INFO" | grep -o '"is_raspberry_pi": [^,]*' | cut -d' ' -f2)
+  PI_MODEL=$(echo "$SYSTEM_INFO" | grep -o '"model": "[^"]*"' | head -n1 | cut -d'"' -f4)
+  
+  # Extract memory
+  MEM_TOTAL=$(echo "$SYSTEM_INFO" | grep -o '"total_gb": [^,]*' | cut -d' ' -f2)
+  
+  # Display system information
+  echo -e "${BLUE}System Information:${NC}"
+  echo -e "  Architecture: ${GREEN}$ARCH${NC}"
+  echo -e "  OS: ${GREEN}$OS_NAME $OS_VERSION${NC}"
+  if [ "$IS_RASPBERRY_PI" = "true" ]; then
+    echo -e "  Device: ${GREEN}$PI_MODEL${NC}"
+  fi
+  echo -e "  Memory: ${GREEN}${MEM_TOTAL}GB${NC}"
+  echo ""
+  
+  # Check minimum requirements
+  REQUIREMENTS_MET=true
+  REQUIREMENTS_WARNINGS=""
+  
+  # Check memory
+  if (( $(echo "$MEM_TOTAL < 2" | bc -l) )); then
+    REQUIREMENTS_MET=false
+    REQUIREMENTS_WARNINGS+="  - Insufficient memory: ${RED}${MEM_TOTAL}GB${NC} (minimum 2GB recommended)\n"
+  fi
+  
+  # If requirements not met, show warning
+  if [ "$REQUIREMENTS_MET" = "false" ]; then
+    echo -e "${YELLOW}Warning: Your system does not meet the minimum requirements:${NC}"
+    echo -e "$REQUIREMENTS_WARNINGS"
+    echo -e "${YELLOW}You can still continue, but performance may be affected.${NC}"
+    echo -e "${YELLOW}Continue anyway? (y/n)${NC}"
+    read -r CONTINUE
+    if [[ ! "$CONTINUE" =~ ^[Yy]$ ]]; then
+      echo "Installation aborted."
+      exit 1
+    fi
+  fi
+fi
 
 # Check for dependencies
 check_dep() {
@@ -45,19 +101,51 @@ if [ $DEPS_MISSING -eq 1 ]; then
   read -r INSTALL_DEPS
   if [[ "$INSTALL_DEPS" =~ ^[Yy]$ ]]; then
     echo "Installing dependencies..."
-    sudo apt update
-    if ! command -v docker &> /dev/null; then
-      echo "Installing Docker..."
-      curl -fsSL https://get.docker.com | sh
+    
+    # Detect package manager
+    if command -v apt &> /dev/null; then
+      PKG_MANAGER="apt"
+    elif command -v dnf &> /dev/null; then
+      PKG_MANAGER="dnf"
+    elif command -v yum &> /dev/null; then
+      PKG_MANAGER="yum"
+    else
+      echo -e "${RED}Unsupported package manager. Please install dependencies manually.${NC}"
+      exit 1
     fi
-    if ! command -v python3 &> /dev/null; then
-      echo "Installing Python3..."
-      sudo apt install -y python3
-    fi
-    if ! command -v pip3 &> /dev/null; then
-      echo "Installing pip3..."
-      sudo apt install -y python3-pip
-    fi
+    
+    # Install dependencies based on package manager
+    case $PKG_MANAGER in
+      apt)
+        sudo apt update
+        if ! command -v docker &> /dev/null; then
+          echo "Installing Docker..."
+          curl -fsSL https://get.docker.com | sh
+        fi
+        if ! command -v python3 &> /dev/null; then
+          echo "Installing Python3..."
+          sudo apt install -y python3
+        fi
+        if ! command -v pip3 &> /dev/null; then
+          echo "Installing pip3..."
+          sudo apt install -y python3-pip
+        fi
+        ;;
+      dnf|yum)
+        if ! command -v docker &> /dev/null; then
+          echo "Installing Docker..."
+          curl -fsSL https://get.docker.com | sh
+        fi
+        if ! command -v python3 &> /dev/null; then
+          echo "Installing Python3..."
+          sudo $PKG_MANAGER install -y python3
+        fi
+        if ! command -v pip3 &> /dev/null; then
+          echo "Installing pip3..."
+          sudo $PKG_MANAGER install -y python3-pip
+        fi
+        ;;
+    esac
   else
     echo -e "${RED}Please install the missing dependencies and try again.${NC}"
     exit 1
@@ -66,35 +154,57 @@ fi
 
 # Check Python packages
 echo "Checking Python packages..."
-if ! pip3 show flask &> /dev/null || ! pip3 show flask_cors &> /dev/null || ! pip3 show psutil &> /dev/null; then
+if ! python3 -c "import flask" &> /dev/null || ! python3 -c "import flask_cors" &> /dev/null || ! python3 -c "import psutil" &> /dev/null; then
   echo -e "${YELLOW}Installing required Python packages...${NC}"
-  pip3 install --user -r requirements.txt
+  pip3 install --user -r "$SCRIPT_DIR/requirements.txt"
 fi
 
 # Make scripts executable
-chmod +x pi-pvr.sh
-chmod +x web-install.sh
-chmod +x scripts/generate-compose.sh
-chmod +x scripts/api.py
+chmod +x "$SCRIPT_DIR/pi-pvr.sh"
+chmod +x "$SCRIPT_DIR/web-install.sh"
+chmod +x "$SCRIPT_DIR/scripts/generate-compose.sh"
+chmod +x "$SCRIPT_DIR/scripts/api.py"
+chmod +x "$SCRIPT_DIR/scripts/detect-system.sh"
+chmod +x "$SCRIPT_DIR/scripts/remote-installer.sh"
 
 # Present options
 echo ""
 echo -e "${BLUE}Choose installation method:${NC}"
 echo "1) Terminal-based installation"
 echo "2) Web-based installation (recommended)"
-echo "3) Exit"
+echo "3) Remote installation"
+echo "4) Exit"
 read -r CHOICE
 
 case $CHOICE in
   1)
     echo "Starting terminal-based installation..."
-    ./pi-pvr.sh
+    "$SCRIPT_DIR/pi-pvr.sh"
     ;;
   2)
     echo "Starting web-based installation..."
-    ./web-install.sh
+    "$SCRIPT_DIR/web-install.sh"
     ;;
   3)
+    echo "Starting remote installation..."
+    # Prompt for remote details
+    echo -e "${BLUE}Remote Installation Setup${NC}"
+    echo -e "Please enter the details of the remote system:"
+    
+    read -p "Remote username: " REMOTE_USER
+    read -p "Remote hostname or IP: " REMOTE_HOST
+    read -p "SSH port (default: 22): " REMOTE_PORT
+    REMOTE_PORT=${REMOTE_PORT:-22}
+    read -p "Installation directory (default: /home/pi/pi-pvr): " REMOTE_DIR
+    REMOTE_DIR=${REMOTE_DIR:-/home/pi/pi-pvr}
+    read -p "Installation mode (web/cli, default: web): " INSTALL_MODE
+    INSTALL_MODE=${INSTALL_MODE:-web}
+    
+    # Run remote installer
+    "$SCRIPT_DIR/scripts/remote-installer.sh" -u "$REMOTE_USER" -h "$REMOTE_HOST" \
+      -p "$REMOTE_PORT" -d "$REMOTE_DIR" -m "$INSTALL_MODE"
+    ;;
+  4)
     echo "Exiting."
     exit 0
     ;;

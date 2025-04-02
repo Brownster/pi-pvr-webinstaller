@@ -175,6 +175,55 @@ if [[ "$USE_PROXY" == "true" ]]; then
   PROFILES+=("--profile proxy")
 fi
 
+# Detect system and set hardware acceleration options
+echo "Detecting system for hardware acceleration..."
+if [[ -x "${SCRIPT_DIR}/detect-system.sh" ]]; then
+  SYSTEM_INFO=$(bash "${SCRIPT_DIR}/detect-system.sh")
+  
+  # Extract transcoding info
+  V4L2_AVAILABLE=$(echo "$SYSTEM_INFO" | grep -o '"v4l2_available": [^,]*' | cut -d' ' -f2)
+  VAAPI_AVAILABLE=$(echo "$SYSTEM_INFO" | grep -o '"vaapi_available": [^,]*' | cut -d' ' -f2)
+  NVDEC_AVAILABLE=$(echo "$SYSTEM_INFO" | grep -o '"nvdec_available": [^,]*' | cut -d' ' -f2)
+  RECOMMENDED_TRANSCODING=$(echo "$SYSTEM_INFO" | grep -o '"recommended_method": "[^"]*"' | cut -d'"' -f4)
+  
+  # Set hardware acceleration devices based on detected capabilities
+  if [[ "$V4L2_AVAILABLE" == "true" ]]; then
+    echo "Raspberry Pi hardware acceleration detected, using V4L2"
+    export HW_ACCEL_JELLYFIN="devices:
+      - /dev/video10:/dev/video10
+      - /dev/video11:/dev/video11
+      - /dev/video12:/dev/video12
+      - /dev/vchiq:/dev/vchiq"
+    export HW_ACCEL_PLEX="$HW_ACCEL_JELLYFIN"
+    export HW_ACCEL_EMBY="$HW_ACCEL_JELLYFIN"
+  elif [[ "$VAAPI_AVAILABLE" == "true" ]]; then
+    echo "Intel/AMD GPU hardware acceleration detected, using VAAPI"
+    export HW_ACCEL_JELLYFIN="devices:
+      - /dev/dri:/dev/dri"
+    export HW_ACCEL_PLEX="$HW_ACCEL_JELLYFIN"
+    export HW_ACCEL_EMBY="$HW_ACCEL_JELLYFIN"
+  elif [[ "$NVDEC_AVAILABLE" == "true" ]]; then
+    echo "NVIDIA GPU hardware acceleration detected, using NVDEC"
+    export HW_ACCEL_JELLYFIN="runtime: nvidia
+    devices:
+      - /dev/nvidia0:/dev/nvidia0
+      - /dev/nvidiactl:/dev/nvidiactl
+      - /dev/nvidia-modeset:/dev/nvidia-modeset"
+    export HW_ACCEL_PLEX="$HW_ACCEL_JELLYFIN"
+    export HW_ACCEL_EMBY="$HW_ACCEL_JELLYFIN"
+  else
+    echo "No hardware acceleration detected, using software transcoding"
+    export HW_ACCEL_JELLYFIN=""
+    export HW_ACCEL_PLEX=""
+    export HW_ACCEL_EMBY=""
+  fi
+else
+  echo "System detection script not found, using software transcoding"
+  export HW_ACCEL_JELLYFIN=""
+  export HW_ACCEL_PLEX=""
+  export HW_ACCEL_EMBY=""
+fi
+
 # Generate docker-compose file paths
 COMPOSE_FILES=""
 for SERVICE in "${SERVICES[@]}"; do

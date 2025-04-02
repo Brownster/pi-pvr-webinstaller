@@ -17,12 +17,8 @@ services:
       - ${JELLYFIN_PORT:-8096}:8096
       - ${JELLYFIN_HTTPS_PORT:-8920}:8920
     restart: unless-stopped
-    devices:
-      # Hardware acceleration for Raspberry Pi (uncomment if using)
-      #- /dev/vchiq:/dev/vchiq
-      #- /dev/video10:/dev/video10
-      #- /dev/video11:/dev/video11
-      #- /dev/video12:/dev/video12
+    # Include hardware acceleration devices if available
+    ${HW_ACCEL_JELLYFIN}
     networks:
       - app_network
     profiles:
@@ -46,12 +42,8 @@ services:
       - ${MEDIA_DIR:-/mnt/media}/music:/music
       - ${MEDIA_DIR:-/mnt/media}/photos:/photos
     restart: unless-stopped
-    devices:
-      # Hardware acceleration for Raspberry Pi (uncomment if using)
-      #- /dev/vchiq:/dev/vchiq
-      #- /dev/video10:/dev/video10
-      #- /dev/video11:/dev/video11
-      #- /dev/video12:/dev/video12
+    # Include hardware acceleration devices if available
+    ${HW_ACCEL_PLEX}
     profiles:
       - plex
 
@@ -72,12 +64,8 @@ services:
       - ${EMBY_PORT:-8096}:8096
       - ${EMBY_HTTPS_PORT:-8920}:8920
     restart: unless-stopped
-    devices:
-      # Hardware acceleration for Raspberry Pi (uncomment if using)
-      #- /dev/vchiq:/dev/vchiq
-      #- /dev/video10:/dev/video10
-      #- /dev/video11:/dev/video11
-      #- /dev/video12:/dev/video12
+    # Include hardware acceleration devices if available
+    ${HW_ACCEL_EMBY}
     networks:
       - app_network
     profiles:

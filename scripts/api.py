@@ -128,6 +128,24 @@ def is_docker_installed():
 
 # Get system information
 def get_system_info():
+    # First try to use the detect-system.sh script for more detailed info
+    detect_script = os.path.join(os.path.dirname(BASE_DIR), "scripts", "detect-system.sh")
+    try:
+        if os.path.exists(detect_script) and os.access(detect_script, os.X_OK):
+            result = subprocess.run([detect_script], capture_output=True, text=True, check=True)
+            system_info = json.loads(result.stdout)
+            
+            # Add basic memory info to be compatible with the existing code
+            system_info["memory_total"] = psutil.virtual_memory().total
+            system_info["memory_available"] = psutil.virtual_memory().available
+            system_info["disk_total"] = psutil.disk_usage('/').total
+            system_info["disk_free"] = psutil.disk_usage('/').free
+            
+            return system_info
+    except (subprocess.CalledProcessError, json.JSONDecodeError) as e:
+        print(f"Warning: Failed to get detailed system info: {e}")
+    
+    # Fall back to basic system info
     info = {
         "hostname": platform.node(),
         "platform": platform.system(),
@@ -140,8 +158,46 @@ def get_system_info():
         "disk_total": psutil.disk_usage('/').total,
         "disk_free": psutil.disk_usage('/').free,
         "docker_installed": is_docker_installed(),
-        "tailscale_installed": os.path.exists("/usr/bin/tailscale")
+        "tailscale_installed": os.path.exists("/usr/bin/tailscale"),
+        "os": {
+            "name": platform.system().lower(),
+            "version": platform.version(),
+            "pretty_name": f"{platform.system()} {platform.version()}"
+        },
+        "raspberry_pi": {
+            "is_raspberry_pi": os.path.exists("/proc/device-tree/model") and 
+                              "raspberry pi" in open("/proc/device-tree/model", "r").read().lower(),
+            "model": "Unknown Raspberry Pi" if os.path.exists("/proc/device-tree/model") else "Not a Raspberry Pi"
+        },
+        "hardware": {
+            "cpu": {
+                "model": platform.processor(),
+                "cores": os.cpu_count() or 1
+            },
+            "memory": {
+                "total_gb": round(psutil.virtual_memory().total / (1024**3), 1)
+            },
+            "disk": {
+                "root_size_gb": round(psutil.disk_usage('/').total / (1024**3), 1),
+                "root_available_gb": round(psutil.disk_usage('/').free / (1024**3), 1)
+            }
+        },
+        "transcoding": {
+            "vaapi_available": os.path.exists("/dev/dri"),
+            "nvdec_available": os.path.exists("/dev/nvidia0"),
+            "v4l2_available": os.path.exists("/dev/video10"),
+            "recommended_method": "software"
+        }
     }
+    
+    # Determine recommended transcoding method
+    if info["transcoding"]["v4l2_available"]:
+        info["transcoding"]["recommended_method"] = "v4l2"
+    elif info["transcoding"]["nvdec_available"]:
+        info["transcoding"]["recommended_method"] = "nvdec"
+    elif info["transcoding"]["vaapi_available"]:
+        info["transcoding"]["recommended_method"] = "vaapi"
+    
     return info
 
 # Get docker container status
