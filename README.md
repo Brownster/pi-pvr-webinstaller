@@ -20,6 +20,9 @@ Features
     Customizable: Easily modify container names, ports, and settings.
     Automatic Updates: Pull the latest docker-compose.yml from GitHub and redeploy with a single command.
 
+![image](https://github.com/user-attachments/assets/60ce9daf-3f7a-4a59-8ab1-5eb4be74a7a7)
+
+
 Requirements
 
     Raspberry Pi or Linux-based system (tested on Raspberry Pi 5 with 8GB RAM).
