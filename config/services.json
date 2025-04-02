@@ -1,0 +1,30 @@
+{
+  "arr_apps": {
+    "sonarr": true,
+    "radarr": true,
+    "prowlarr": true,
+    "lidarr": false,
+    "readarr": false,
+    "bazarr": false
+  },
+  "download_clients": {
+    "transmission": true,
+    "qbittorrent": false,
+    "nzbget": true,
+    "sabnzbd": false,
+    "jdownloader": false
+  },
+  "media_servers": {
+    "jellyfin": true,
+    "plex": false,
+    "emby": false
+  },
+  "utilities": {
+    "heimdall": false,
+    "overseerr": false,
+    "tautulli": false,
+    "portainer": true,
+    "nginx_proxy_manager": false,
+    "get_iplayer": true
+  }
+}

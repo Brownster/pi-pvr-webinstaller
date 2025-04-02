@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PI-PVR Ultimate Media Stack</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="static/css/style.css">
+  <link rel="stylesheet" href="/css/main.css">
 </head>
 <body>
   <header>
@@ -17,9 +17,13 @@
       <nav>
         <ul>
           <li><a href="#" class="active" data-tab="dashboard">Dashboard</a></li>
+          <li><a href="#" data-tab="services">Services</a></li>
+          <li><a href="#" data-tab="storage">Storage</a></li>
+          <li><a href="#" data-tab="network">Network</a></li>
           <li><a href="#" data-tab="install">Install</a></li>
-          <li><a href="#" data-tab="manage">Manage</a></li>
           <li><a href="#" data-tab="settings">Settings</a></li>
+          <li><a href="#" data-tab="logs">Logs</a></li>
+          <li><a href="#" data-tab="help">Help</a></li>
         </ul>
       </nav>
       <button class="theme-toggle" id="theme-toggle">
@@ -39,7 +43,42 @@
             <i class="fas fa-info-circle card-icon"></i>
             System Information
           </div>
-          <div id="system-info">Loading system information...</div>
+          <div id="system-info">
+            <div class="grid">
+              <div class="stat">
+                <span class="stat-label">Hostname:</span>
+                <span class="stat-value" id="hostname">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Operating System:</span>
+                <span class="stat-value" id="os">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Architecture:</span>
+                <span class="stat-value" id="architecture">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Memory:</span>
+                <span class="stat-value" id="memory">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Storage:</span>
+                <span class="stat-value" id="storage">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">IP Address:</span>
+                <span class="stat-value" id="ip-address">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Tailscale:</span>
+                <span class="stat-value" id="tailscale-status">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Installation:</span>
+                <span class="stat-value" id="installation-status">Loading...</span>
+              </div>
+            </div>
+          </div>
         </div>
         
         <div class="card">
@@ -53,7 +92,7 @@
                 <h3>CPU Usage</h3>
                 <div class="progress-container">
                   <div class="progress-bar" id="cpu-usage-bar" style="width: 0%;">
-                    <span class="progress-text">0%</span>
+                    <span class="progress-text" id="cpu-usage">0%</span>
                   </div>
                 </div>
               </div>
@@ -61,7 +100,7 @@
                 <h3>Memory Usage</h3>
                 <div class="progress-container">
                   <div class="progress-bar" id="memory-usage-bar" style="width: 0%;">
-                    <span class="progress-text">0%</span>
+                    <span class="progress-text" id="memory-usage">0%</span>
                   </div>
                 </div>
               </div>
@@ -69,7 +108,7 @@
                 <h3>Disk Usage</h3>
                 <div class="progress-container">
                   <div class="progress-bar" id="disk-usage-bar" style="width: 0%;">
-                    <span class="progress-text">0%</span>
+                    <span class="progress-text" id="disk-usage">0%</span>
                   </div>
                 </div>
               </div>
@@ -77,11 +116,455 @@
           </div>
         </div>
         
-        <h2>Services</h2>
-        <div class="grid" id="services-grid">
-          <div class="card service-card">
-            <div class="service-card-header">
-              <h3>Loading services...</h3>
+        <h2>Service Status</h2>
+        <div class="card">
+          <table class="services-table">
+            <thead>
+              <tr>
+                <th>Service</th>
+                <th>Status</th>
+                <th>Port</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="services-table-body">
+              <tr>
+                <td colspan="4">Loading services...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div id="install-button-container" class="mt-20">
+          <a href="#" data-tab="install" class="btn btn-primary">Go to Installation</a>
+        </div>
+      </div>
+      
+      <!-- Services Tab (NEW) -->
+      <div class="tab-content" id="services">
+        <h1 class="page-title">Services</h1>
+        
+        <div class="tab-container">
+          <div class="tabs">
+            <button class="tab active" data-services-tab="all">All Services</button>
+            <button class="tab" data-services-tab="media">Media Management</button>
+            <button class="tab" data-services-tab="download">Download Clients</button>
+            <button class="tab" data-services-tab="utilities">Utilities</button>
+          </div>
+          
+          <!-- All Services Tab -->
+          <div class="tab-content active" id="services-all">
+            <div class="card">
+              <div class="card-title">
+                <i class="fas fa-server card-icon"></i>
+                All Services
+              </div>
+              <div id="all-services">
+                <table class="services-table">
+                  <thead>
+                    <tr>
+                      <th>Service</th>
+                      <th>Type</th>
+                      <th>Status</th>
+                      <th>URL/Port</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="all-services-table">
+                    <tr>
+                      <td colspan="5">Loading services...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-title">
+                <i class="fas fa-tools card-icon"></i>
+                Batch Operations
+              </div>
+              <div class="grid">
+                <div>
+                  <button class="btn btn-primary" id="start-all">
+                    <i class="fas fa-play"></i> Start All
+                  </button>
+                </div>
+                <div>
+                  <button class="btn btn-warning" id="restart-all">
+                    <i class="fas fa-sync-alt"></i> Restart All
+                  </button>
+                </div>
+                <div>
+                  <button class="btn btn-danger" id="stop-all">
+                    <i class="fas fa-stop"></i> Stop All
+                  </button>
+                </div>
+                <div>
+                  <button class="btn btn-secondary" id="update-all">
+                    <i class="fas fa-arrow-up"></i> Update All
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Media Management Tab -->
+          <div class="tab-content" id="services-media">
+            <div class="card">
+              <div class="card-title">Media Management Services</div>
+              <div class="services-grid" id="media-services-grid">
+                <!-- Dynamically populated with media services -->
+                <div class="service-card">Loading media services...</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Download Clients Tab -->
+          <div class="tab-content" id="services-download">
+            <div class="card">
+              <div class="card-title">Download Client Services</div>
+              <div class="services-grid" id="download-services-grid">
+                <!-- Dynamically populated with download services -->
+                <div class="service-card">Loading download services...</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Utilities Tab -->
+          <div class="tab-content" id="services-utilities">
+            <div class="card">
+              <div class="card-title">Utility Services</div>
+              <div class="services-grid" id="utility-services-grid">
+                <!-- Dynamically populated with utility services -->
+                <div class="service-card">Loading utility services...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Storage Tab (NEW) -->
+      <div class="tab-content" id="storage">
+        <h1 class="page-title">Storage Management</h1>
+        
+        <div class="card">
+          <div class="card-title">
+            <i class="fas fa-hdd card-icon"></i>
+            Connected Drives
+          </div>
+          <div id="drives-container">
+            <table class="drives-table">
+              <thead>
+                <tr>
+                  <th>Device</th>
+                  <th>Mount Point</th>
+                  <th>Size</th>
+                  <th>Used</th>
+                  <th>Available</th>
+                  <th>File System</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="drives-table-body">
+                <tr>
+                  <td colspan="7">Loading drives...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-title">
+            <i class="fas fa-folder-open card-icon"></i>
+            Media Directories
+          </div>
+          <div id="directories-container">
+            <div class="grid">
+              <div class="directory-card">
+                <h3><i class="fas fa-film"></i> Movies</h3>
+                <p class="directory-path" id="movies-path">/mnt/storage/Movies</p>
+                <div class="progress-container">
+                  <div class="progress-bar" id="movies-usage-bar" style="width: 0%;">
+                    <span class="progress-text" id="movies-usage">0%</span>
+                  </div>
+                </div>
+                <div class="directory-stats">
+                  <p><strong>Size:</strong> <span id="movies-size">Loading...</span></p>
+                  <p><strong>Files:</strong> <span id="movies-files">Loading...</span></p>
+                </div>
+                <div class="directory-actions">
+                  <button class="btn btn-primary" id="scan-movies">
+                    <i class="fas fa-sync"></i> Scan
+                  </button>
+                  <button class="btn btn-secondary" id="browse-movies">
+                    <i class="fas fa-folder-open"></i> Browse
+                  </button>
+                </div>
+              </div>
+              
+              <div class="directory-card">
+                <h3><i class="fas fa-tv"></i> TV Shows</h3>
+                <p class="directory-path" id="tvshows-path">/mnt/storage/TVShows</p>
+                <div class="progress-container">
+                  <div class="progress-bar" id="tvshows-usage-bar" style="width: 0%;">
+                    <span class="progress-text" id="tvshows-usage">0%</span>
+                  </div>
+                </div>
+                <div class="directory-stats">
+                  <p><strong>Size:</strong> <span id="tvshows-size">Loading...</span></p>
+                  <p><strong>Files:</strong> <span id="tvshows-files">Loading...</span></p>
+                </div>
+                <div class="directory-actions">
+                  <button class="btn btn-primary" id="scan-tvshows">
+                    <i class="fas fa-sync"></i> Scan
+                  </button>
+                  <button class="btn btn-secondary" id="browse-tvshows">
+                    <i class="fas fa-folder-open"></i> Browse
+                  </button>
+                </div>
+              </div>
+              
+              <div class="directory-card">
+                <h3><i class="fas fa-download"></i> Downloads</h3>
+                <p class="directory-path" id="downloads-path">/mnt/storage/downloads</p>
+                <div class="progress-container">
+                  <div class="progress-bar" id="downloads-usage-bar" style="width: 0%;">
+                    <span class="progress-text" id="downloads-usage">0%</span>
+                  </div>
+                </div>
+                <div class="directory-stats">
+                  <p><strong>Size:</strong> <span id="downloads-size">Loading...</span></p>
+                  <p><strong>Files:</strong> <span id="downloads-files">Loading...</span></p>
+                </div>
+                <div class="directory-actions">
+                  <button class="btn btn-primary" id="scan-downloads">
+                    <i class="fas fa-sync"></i> Scan
+                  </button>
+                  <button class="btn btn-secondary" id="browse-downloads">
+                    <i class="fas fa-folder-open"></i> Browse
+                  </button>
+                  <button class="btn btn-danger" id="clean-downloads">
+                    <i class="fas fa-trash"></i> Clean
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-title">
+            <i class="fas fa-share-alt card-icon"></i>
+            Network Shares
+          </div>
+          <div id="shares-container">
+            <div class="tab-container">
+              <div class="tabs">
+                <button class="tab active" data-share-tab="samba">Samba (SMB)</button>
+                <button class="tab" data-share-tab="nfs">NFS</button>
+              </div>
+              
+              <div class="tab-content active" id="samba-shares">
+                <table class="shares-table">
+                  <thead>
+                    <tr>
+                      <th>Share Name</th>
+                      <th>Path</th>
+                      <th>Access</th>
+                      <th>Connection String</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="samba-shares-body">
+                    <tr>
+                      <td colspan="5">Loading Samba shares...</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="mt-20">
+                  <button class="btn btn-primary" id="add-samba-share">
+                    <i class="fas fa-plus"></i> Add Share
+                  </button>
+                </div>
+              </div>
+              
+              <div class="tab-content" id="nfs-shares">
+                <table class="shares-table">
+                  <thead>
+                    <tr>
+                      <th>Export Path</th>
+                      <th>Client</th>
+                      <th>Options</th>
+                      <th>Connection String</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="nfs-shares-body">
+                    <tr>
+                      <td colspan="5">Loading NFS exports...</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="mt-20">
+                  <button class="btn btn-primary" id="add-nfs-share">
+                    <i class="fas fa-plus"></i> Add Export
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Network Tab (NEW) -->
+      <div class="tab-content" id="network">
+        <h1 class="page-title">Network Management</h1>
+        
+        <div class="card">
+          <div class="card-title">
+            <i class="fas fa-network-wired card-icon"></i>
+            Network Configuration
+          </div>
+          <div id="network-info">
+            <div class="grid">
+              <div class="stat">
+                <span class="stat-label">Hostname:</span>
+                <span class="stat-value" id="net-hostname">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Primary IP:</span>
+                <span class="stat-value" id="net-ip">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Gateway:</span>
+                <span class="stat-value" id="net-gateway">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">DNS Servers:</span>
+                <span class="stat-value" id="net-dns">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">MAC Address:</span>
+                <span class="stat-value" id="net-mac">Loading...</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <button class="btn btn-primary" id="edit-network">
+                <i class="fas fa-edit"></i> Edit Configuration
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-title">
+            <i class="fas fa-lock card-icon"></i>
+            VPN Configuration
+          </div>
+          <div id="vpn-info">
+            <div class="grid">
+              <div class="stat">
+                <span class="stat-label">VPN Status:</span>
+                <span class="stat-value" id="vpn-status">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Provider:</span>
+                <span class="stat-value" id="vpn-provider">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Server Region:</span>
+                <span class="stat-value" id="vpn-region">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">External IP:</span>
+                <span class="stat-value" id="vpn-external-ip">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Connected Since:</span>
+                <span class="stat-value" id="vpn-connected-since">Loading...</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <button class="btn btn-primary" id="edit-vpn">
+                <i class="fas fa-edit"></i> Edit VPN
+              </button>
+              <button class="btn btn-success" id="connect-vpn">
+                <i class="fas fa-plug"></i> Connect
+              </button>
+              <button class="btn btn-danger" id="disconnect-vpn">
+                <i class="fas fa-times"></i> Disconnect
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-title">
+            <i class="fas fa-shield-alt card-icon"></i>
+            Tailscale Configuration
+          </div>
+          <div id="tailscale-info">
+            <div class="grid">
+              <div class="stat">
+                <span class="stat-label">Tailscale Status:</span>
+                <span class="stat-value" id="ts-status">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Tailscale IP:</span>
+                <span class="stat-value" id="ts-ip">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Hostname:</span>
+                <span class="stat-value" id="ts-hostname">Loading...</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Connected Peers:</span>
+                <span class="stat-value" id="ts-peers">Loading...</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <button class="btn btn-primary" id="edit-tailscale">
+                <i class="fas fa-edit"></i> Edit Tailscale
+              </button>
+              <button class="btn btn-success" id="connect-tailscale">
+                <i class="fas fa-plug"></i> Connect
+              </button>
+              <button class="btn btn-danger" id="disconnect-tailscale">
+                <i class="fas fa-times"></i> Disconnect
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-title">
+            <i class="fas fa-door-open card-icon"></i>
+            Port Forwarding
+          </div>
+          <div id="port-forwarding">
+            <table class="port-table">
+              <thead>
+                <tr>
+                  <th>Service</th>
+                  <th>Internal Port</th>
+                  <th>External Port</th>
+                  <th>Protocol</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="port-table-body">
+                <tr>
+                  <td colspan="6">Loading port forwards...</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="mt-20">
+              <button class="btn btn-primary" id="add-port-forward">
+                <i class="fas fa-plus"></i> Add Port Forward
+              </button>
             </div>
           </div>
         </div>
@@ -469,80 +952,595 @@
         </div>
       </div>
       
-      <!-- Manage Tab -->
-      <div class="tab-content" id="manage">
-        <h1 class="page-title">Manage Services</h1>
+      <!-- Settings Tab -->
+      <div class="tab-content" id="settings">
+        <h1 class="page-title">Settings</h1>
+        
+        <div class="tab-container">
+          <div class="tabs">
+            <button class="tab active" data-settings-tab="general">General</button>
+            <button class="tab" data-settings-tab="services">Services</button>
+            <button class="tab" data-settings-tab="network">Network</button>
+            <button class="tab" data-settings-tab="security">Security</button>
+            <button class="tab" data-settings-tab="advanced">Advanced</button>
+          </div>
+          
+          <!-- General Settings Tab -->
+          <div class="tab-content active" id="settings-general">
+            <div class="card">
+              <div class="card-title">
+                <i class="fas fa-cog card-icon"></i>
+                General Settings
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-puid">User ID (PUID):</label>
+                <input type="number" id="settings-puid" name="settings-puid" value="1000">
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-pgid">Group ID (PGID):</label>
+                <input type="number" id="settings-pgid" name="settings-pgid" value="1000">
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-timezone">Timezone:</label>
+                <input type="text" id="settings-timezone" name="settings-timezone" value="Europe/London">
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-language">Language:</label>
+                <select id="settings-language" name="settings-language">
+                  <option value="en">English</option>
+                  <option value="fr">French</option>
+                  <option value="de">German</option>
+                  <option value="es">Spanish</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-theme">Theme:</label>
+                <select id="settings-theme" name="settings-theme">
+                  <option value="auto">Auto (System)</option>
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <button class="btn btn-primary" id="save-general-settings">Save General Settings</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Services Settings Tab -->
+          <div class="tab-content" id="settings-services">
+            <div class="card">
+              <div class="card-title">
+                <i class="fas fa-server card-icon"></i>
+                Services Settings
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-auto-update">Auto Update Services:</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="settings-auto-update" name="settings-auto-update" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-restart-policy">Container Restart Policy:</label>
+                <select id="settings-restart-policy" name="settings-restart-policy">
+                  <option value="unless-stopped">Unless Stopped</option>
+                  <option value="always">Always</option>
+                  <option value="on-failure">On Failure</option>
+                  <option value="no">Never</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-update-channel">Update Channel:</label>
+                <select id="settings-update-channel" name="settings-update-channel">
+                  <option value="latest">Latest</option>
+                  <option value="stable">Stable</option>
+                  <option value="beta">Beta</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <button class="btn btn-primary" id="save-services-settings">Save Services Settings</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Network Settings Tab -->
+          <div class="tab-content" id="settings-network">
+            <div class="card">
+              <div class="card-title">
+                <i class="fas fa-network-wired card-icon"></i>
+                Network Settings
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-port-range">Default Port Range:</label>
+                <div class="port-range-container">
+                  <input type="number" id="settings-port-range-start" name="settings-port-range-start" value="6000">
+                  <span>to</span>
+                  <input type="number" id="settings-port-range-end" name="settings-port-range-end" value="7000">
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-vpn-killswitch">VPN Kill Switch:</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="settings-vpn-killswitch" name="settings-vpn-killswitch" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-proxy-enabled">Enable Proxy:</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="settings-proxy-enabled" name="settings-proxy-enabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div id="proxy-settings" style="display: none;">
+                <div class="form-group">
+                  <label for="settings-proxy-type">Proxy Type:</label>
+                  <select id="settings-proxy-type" name="settings-proxy-type">
+                    <option value="http">HTTP</option>
+                    <option value="socks5">SOCKS5</option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label for="settings-proxy-host">Proxy Host:</label>
+                  <input type="text" id="settings-proxy-host" name="settings-proxy-host">
+                </div>
+                
+                <div class="form-group">
+                  <label for="settings-proxy-port">Proxy Port:</label>
+                  <input type="number" id="settings-proxy-port" name="settings-proxy-port">
+                </div>
+                
+                <div class="form-group">
+                  <label for="settings-proxy-username">Proxy Username (if required):</label>
+                  <input type="text" id="settings-proxy-username" name="settings-proxy-username">
+                </div>
+                
+                <div class="form-group">
+                  <label for="settings-proxy-password">Proxy Password (if required):</label>
+                  <input type="password" id="settings-proxy-password" name="settings-proxy-password">
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <button class="btn btn-primary" id="save-network-settings">Save Network Settings</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Security Settings Tab -->
+          <div class="tab-content" id="settings-security">
+            <div class="card">
+              <div class="card-title">
+                <i class="fas fa-shield-alt card-icon"></i>
+                Security Settings
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-password-protect">Password Protect UI:</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="settings-password-protect" name="settings-password-protect">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div id="auth-settings" style="display: none;">
+                <div class="form-group">
+                  <label for="settings-username">Username:</label>
+                  <input type="text" id="settings-username" name="settings-username">
+                </div>
+                
+                <div class="form-group">
+                  <label for="settings-password">Password:</label>
+                  <input type="password" id="settings-password" name="settings-password">
+                </div>
+                
+                <div class="form-group">
+                  <label for="settings-confirm-password">Confirm Password:</label>
+                  <input type="password" id="settings-confirm-password" name="settings-confirm-password">
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-https-enabled">Enable HTTPS:</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="settings-https-enabled" name="settings-https-enabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div id="https-settings" style="display: none;">
+                <div class="form-group">
+                  <label for="settings-https-cert">HTTPS Certificate Path:</label>
+                  <input type="text" id="settings-https-cert" name="settings-https-cert">
+                </div>
+                
+                <div class="form-group">
+                  <label for="settings-https-key">HTTPS Key Path:</label>
+                  <input type="text" id="settings-https-key" name="settings-https-key">
+                </div>
+                
+                <div class="form-group">
+                  <button class="btn btn-secondary" id="generate-self-signed">Generate Self-Signed Certificate</button>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <button class="btn btn-primary" id="save-security-settings">Save Security Settings</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Advanced Settings Tab -->
+          <div class="tab-content" id="settings-advanced">
+            <div class="card">
+              <div class="card-title">
+                <i class="fas fa-tools card-icon"></i>
+                Advanced Settings
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-debug-mode">Debug Mode:</label>
+                <label class="checkbox-toggle">
+                  <input type="checkbox" id="settings-debug-mode" name="settings-debug-mode">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-hardware-acceleration">Hardware Acceleration:</label>
+                <select id="settings-hardware-acceleration" name="settings-hardware-acceleration">
+                  <option value="auto">Auto-detect</option>
+                  <option value="intel">Intel QuickSync</option>
+                  <option value="nvidia">NVIDIA NVENC</option>
+                  <option value="amd">AMD AMF</option>
+                  <option value="rpi">Raspberry Pi VideoCore</option>
+                  <option value="none">None (Software)</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-memory-limit">Container Memory Limit:</label>
+                <input type="text" id="settings-memory-limit" name="settings-memory-limit" value="4G">
+                <div class="tooltip">
+                  <i class="fas fa-question-circle"></i>
+                  <span class="tooltip-text">Format: xM or xG (e.g., 512M, 2G). Leave blank for no limit.</span>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-cpu-limit">Container CPU Limit:</label>
+                <input type="text" id="settings-cpu-limit" name="settings-cpu-limit" value="2">
+                <div class="tooltip">
+                  <i class="fas fa-question-circle"></i>
+                  <span class="tooltip-text">Number of CPU cores to use. Leave blank for no limit.</span>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-custom-docker-flags">Custom Docker Run Flags:</label>
+                <textarea id="settings-custom-docker-flags" name="settings-custom-docker-flags" rows="5"></textarea>
+                <div class="tooltip">
+                  <i class="fas fa-question-circle"></i>
+                  <span class="tooltip-text">Advanced: Additional Docker run flags separated by newlines.</span>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <button class="btn btn-primary" id="save-advanced-settings">Save Advanced Settings</button>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-title danger-zone">
+                <i class="fas fa-exclamation-triangle card-icon"></i>
+                Danger Zone
+              </div>
+              
+              <div class="form-group">
+                <button class="btn btn-danger" id="reset-config">Reset Configuration</button>
+                <button class="btn btn-danger" id="prune-docker">Prune Docker System</button>
+                <button class="btn btn-danger" id="uninstall">Uninstall Stack</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Logs Tab (NEW) -->
+      <div class="tab-content" id="logs">
+        <h1 class="page-title">Logs</h1>
         
         <div class="card">
-          <div class="card-title">Service Control</div>
-          
-          <div class="grid" id="manage-services-grid">
-            <div class="card service-card">
-              <div class="service-card-header">
-                <h3>Loading services...</h3>
+          <div class="card-title">
+            <i class="fas fa-list card-icon"></i>
+            System Logs
+          </div>
+          <div class="log-controls">
+            <div class="form-group">
+              <label for="log-source">Log Source:</label>
+              <select id="log-source">
+                <option value="system">System</option>
+                <option value="installer">Installer</option>
+                <option value="vpn">VPN</option>
+                <option value="docker">Docker</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="log-level">Log Level:</label>
+              <select id="log-level">
+                <option value="all">All</option>
+                <option value="info">Info+</option>
+                <option value="warning">Warning+</option>
+                <option value="error">Error+</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <button class="btn btn-primary" id="refresh-logs">
+                <i class="fas fa-sync"></i> Refresh
+              </button>
+              <button class="btn btn-secondary" id="download-logs">
+                <i class="fas fa-download"></i> Download
+              </button>
+              <button class="btn btn-danger" id="clear-logs">
+                <i class="fas fa-trash"></i> Clear
+              </button>
+            </div>
+          </div>
+          <div class="log-viewer">
+            <pre id="logs-content">Loading logs...</pre>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-title">
+            <i class="fas fa-server card-icon"></i>
+            Container Logs
+          </div>
+          <div class="log-controls">
+            <div class="form-group">
+              <label for="container-source">Container:</label>
+              <select id="container-source">
+                <option value="all">All Containers</option>
+                <!-- Dynamically populated based on running containers -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="container-lines">Lines:</label>
+              <select id="container-lines">
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="500">500</option>
+                <option value="1000">1000</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <div class="checkbox-group">
+                <input type="checkbox" id="follow-logs" name="follow-logs">
+                <label for="follow-logs">Follow logs</label>
+              </div>
+            </div>
+            <div class="form-group">
+              <button class="btn btn-primary" id="refresh-container-logs">
+                <i class="fas fa-sync"></i> Refresh
+              </button>
+              <button class="btn btn-secondary" id="download-container-logs">
+                <i class="fas fa-download"></i> Download
+              </button>
+            </div>
+          </div>
+          <div class="log-viewer">
+            <pre id="container-logs-content">Select a container to view logs...</pre>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Help Tab (NEW) -->
+      <div class="tab-content" id="help">
+        <h1 class="page-title">Help & Documentation</h1>
+        
+        <div class="card">
+          <div class="card-title">
+            <i class="fas fa-info-circle card-icon"></i>
+            About PI-PVR
+          </div>
+          <div class="about-content">
+            <h3>PI-PVR Ultimate Media Stack v0.1</h3>
+            <p>A comprehensive Docker-based media server solution with an intuitive web-based installer, designed for both Raspberry Pi and x86/x64 Linux systems.</p>
+            <div class="grid">
+              <div>
+                <h4>Version: <span id="app-version">0.1</span></h4>
+                <h4>Build Date: <span id="build-date">2025-04-02</span></h4>
+              </div>
+              <div>
+                <h4>System: <span id="help-system-info">Loading...</span></h4>
+                <h4>Docker: <span id="docker-version">Loading...</span></h4>
+              </div>
+            </div>
+            <div class="form-group">
+              <button class="btn btn-primary" id="check-for-updates">
+                <i class="fas fa-download"></i> Check for Updates
+              </button>
+              <a href="https://github.com/Brownster/PI-PVR-0.1" target="_blank" class="btn btn-secondary">
+                <i class="fab fa-github"></i> GitHub Repository
+              </a>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-title">
+            <i class="fas fa-book card-icon"></i>
+            Documentation
+          </div>
+          <div class="documentation-content">
+            <div class="grid">
+              <div class="doc-card">
+                <h3><i class="fas fa-rocket"></i> Getting Started</h3>
+                <p>Learn how to set up and configure your PI-PVR media server.</p>
+                <a href="#" class="btn btn-primary doc-link" data-doc="getting-started">Read Guide</a>
+              </div>
+              
+              <div class="doc-card">
+                <h3><i class="fas fa-server"></i> Services Guide</h3>
+                <p>Detailed information about all available services and their configurations.</p>
+                <a href="#" class="btn btn-primary doc-link" data-doc="services-guide">Read Guide</a>
+              </div>
+              
+              <div class="doc-card">
+                <h3><i class="fas fa-shield-alt"></i> VPN Configuration</h3>
+                <p>How to set up and troubleshoot VPN connections.</p>
+                <a href="#" class="btn btn-primary doc-link" data-doc="vpn-guide">Read Guide</a>
+              </div>
+              
+              <div class="doc-card">
+                <h3><i class="fas fa-wrench"></i> Troubleshooting</h3>
+                <p>Solutions for common issues and troubleshooting steps.</p>
+                <a href="#" class="btn btn-primary doc-link" data-doc="troubleshooting">Read Guide</a>
+              </div>
+              
+              <div class="doc-card">
+                <h3><i class="fas fa-network-wired"></i> Networking Guide</h3>
+                <p>Network configuration, port forwarding, and remote access.</p>
+                <a href="#" class="btn btn-primary doc-link" data-doc="networking">Read Guide</a>
+              </div>
+              
+              <div class="doc-card">
+                <h3><i class="fas fa-hdd"></i> Storage Management</h3>
+                <p>How to manage, monitor, and optimize your media storage.</p>
+                <a href="#" class="btn btn-primary doc-link" data-doc="storage">Read Guide</a>
               </div>
             </div>
           </div>
         </div>
         
         <div class="card">
-          <div class="card-title">Stack Operations</div>
-          
-          <div class="grid">
-            <div class="card">
-              <div class="card-title">Restart All Services</div>
-              <p>Restart all services in the stack.</p>
-              <button class="btn btn-primary" id="restart-all">Restart All</button>
+          <div class="card-title">
+            <i class="fas fa-question-circle card-icon"></i>
+            Frequently Asked Questions
+          </div>
+          <div class="faq-content">
+            <div class="faq-item">
+              <div class="faq-question">How do I add a new media library?</div>
+              <div class="faq-answer">
+                <p>To add a new media library:</p>
+                <ol>
+                  <li>Go to the Storage tab and ensure your media drive is properly mounted</li>
+                  <li>Create a new folder for your media type</li>
+                  <li>In your media server (Jellyfin/Plex/Emby), add the new library pointing to this folder</li>
+                </ol>
+              </div>
             </div>
             
-            <div class="card">
-              <div class="card-title">Update Images</div>
-              <p>Update all Docker images to the latest versions.</p>
-              <button class="btn btn-primary" id="update-images">Update Images</button>
+            <div class="faq-item">
+              <div class="faq-question">How do I update PI-PVR?</div>
+              <div class="faq-answer">
+                <p>To update PI-PVR:</p>
+                <ol>
+                  <li>Go to the Settings tab and click "Check for Updates"</li>
+                  <li>If an update is available, click "Update Now"</li>
+                  <li>The system will download and apply the update automatically</li>
+                </ol>
+                <p>Alternatively, you can run <code>./pi-pvr.sh --update</code> from the command line.</p>
+              </div>
             </div>
             
-            <div class="card">
-              <div class="card-title">Backup Configuration</div>
-              <p>Backup your configuration files.</p>
-              <button class="btn btn-primary" id="backup-config">Backup Config</button>
+            <div class="faq-item">
+              <div class="faq-question">Why can't I connect to my VPN?</div>
+              <div class="faq-answer">
+                <p>Common VPN connection issues:</p>
+                <ul>
+                  <li>Incorrect credentials - Check your username and password</li>
+                  <li>Server issues - Try selecting a different server region</li>
+                  <li>Network issues - Ensure your network allows VPN connections</li>
+                  <li>Outdated VPN container - Try updating the Gluetun container</li>
+                </ul>
+                <p>Check the VPN logs for detailed error messages.</p>
+              </div>
+            </div>
+            
+            <div class="faq-item">
+              <div class="faq-question">How do I access my media server remotely?</div>
+              <div class="faq-answer">
+                <p>There are several ways to access your media server remotely:</p>
+                <ol>
+                  <li><strong>Tailscale</strong> (Recommended): Enable Tailscale in the Network tab for secure access without port forwarding</li>
+                  <li><strong>Port Forwarding</strong>: Configure your router to forward the media server port (e.g., 8096 for Jellyfin)</li>
+                  <li><strong>Reverse Proxy</strong>: Set up Nginx Proxy Manager with a domain name for secure access</li>
+                </ol>
+              </div>
+            </div>
+            
+            <div class="faq-item">
+              <div class="faq-question">How do I add more storage?</div>
+              <div class="faq-answer">
+                <p>To add more storage to your PI-PVR setup:</p>
+                <ol>
+                  <li>Connect your new storage device to your system</li>
+                  <li>Format the drive with a compatible filesystem (ext4 recommended)</li>
+                  <li>Go to the Storage tab and click "Mount New Drive"</li>
+                  <li>Select the drive and specify a mount point</li>
+                  <li>Update your media server paths to include the new storage location</li>
+                </ol>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      
-      <!-- Settings Tab -->
-      <div class="tab-content" id="settings">
-        <h1 class="page-title">Settings</h1>
         
         <div class="card">
-          <div class="card-title">System Configuration</div>
-          
-          <div class="form-group">
-            <label for="settings-puid">User ID (PUID):</label>
-            <input type="number" id="settings-puid" name="settings-puid" value="1000">
+          <div class="card-title">
+            <i class="fas fa-life-ring card-icon"></i>
+            Support
           </div>
-          
-          <div class="form-group">
-            <label for="settings-pgid">Group ID (PGID):</label>
-            <input type="number" id="settings-pgid" name="settings-pgid" value="1000">
-          </div>
-          
-          <div class="form-group">
-            <label for="settings-timezone">Timezone:</label>
-            <input type="text" id="settings-timezone" name="settings-timezone" value="Europe/London">
-          </div>
-          
-          <div class="form-group">
-            <button class="btn btn-primary" id="save-settings">Save Settings</button>
+          <div class="support-content">
+            <div class="grid">
+              <div class="support-card">
+                <h3><i class="fab fa-github"></i> GitHub Issues</h3>
+                <p>Report bugs or request features on our GitHub repository.</p>
+                <a href="https://github.com/Brownster/PI-PVR-0.1/issues" target="_blank" class="btn btn-primary">Open GitHub Issues</a>
+              </div>
+              
+              <div class="support-card">
+                <h3><i class="fab fa-discord"></i> Discord Community</h3>
+                <p>Join our Discord server for help from the community.</p>
+                <a href="#" class="btn btn-primary">Join Discord</a>
+              </div>
+              
+              <div class="support-card">
+                <h3><i class="fas fa-envelope"></i> Email Support</h3>
+                <p>Contact us directly for assistance with complex issues.</p>
+                <a href="mailto:support@pi-pvr.org" class="btn btn-primary">Email Support</a>
+              </div>
+            </div>
           </div>
         </div>
         
-        <div class="card">
-          <div class="card-title">Danger Zone</div>
-          
-          <div class="form-group">
-            <button class="btn btn-danger" id="reset-config">Reset Configuration</button>
-            <button class="btn btn-danger" id="uninstall">Uninstall Stack</button>
+        <div id="documentation-modal" class="modal">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2 id="doc-title">Documentation</h2>
+              <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+              <div id="doc-content">
+                <!-- Documentation content will be loaded here -->
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -553,6 +1551,15 @@
     <p>&copy; 2025 PI-PVR Ultimate Media Stack</p>
   </footer>
 
-  <script src="static/js/app.js"></script>
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Notification container -->
+  <div id="notification-container" class="notification-container"></div>
+
+  <script src="/js/notifications.js" type="module"></script>
+  <script src="/js/api-client.js" type="module"></script>
+  <script src="/js/main.js" type="module"></script>
 </body>
 </html>

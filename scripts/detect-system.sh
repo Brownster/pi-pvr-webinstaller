@@ -4,6 +4,10 @@
 
 set -e
 
+# Get script directory (with support for symlinks)
+SCRIPT_DIR="$( cd -- "$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")")" &> /dev/null && pwd )"
+BASE_DIR="$(dirname "$SCRIPT_DIR")"
+
 # Function to detect architecture
 detect_architecture() {
   # Get machine architecture

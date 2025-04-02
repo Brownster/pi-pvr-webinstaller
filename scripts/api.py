@@ -19,8 +19,10 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-# Set paths
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Get script directory with support for symlinks
+SCRIPT_PATH = os.path.abspath(__file__)
+SCRIPT_DIR = os.path.dirname(SCRIPT_PATH)
+BASE_DIR = os.path.dirname(SCRIPT_DIR)
 CONFIG_DIR = os.path.join(BASE_DIR, "config")
 DOCKER_COMPOSE_DIR = os.path.join(BASE_DIR, "docker-compose")
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
@@ -129,10 +131,11 @@ def is_docker_installed():
 # Get system information
 def get_system_info():
     # First try to use the detect-system.sh script for more detailed info
-    detect_script = os.path.join(os.path.dirname(BASE_DIR), "scripts", "detect-system.sh")
+    detect_script = os.path.join(SCRIPT_DIR, "detect-system.sh")
     try:
         if os.path.exists(detect_script) and os.access(detect_script, os.X_OK):
-            result = subprocess.run([detect_script], capture_output=True, text=True, check=True)
+            # Add timeout of 30 seconds to prevent hanging
+            result = subprocess.run([detect_script], capture_output=True, text=True, check=True, timeout=30)
             system_info = json.loads(result.stdout)
             
             # Add basic memory info to be compatible with the existing code
@@ -142,6 +145,9 @@ def get_system_info():
             system_info["disk_free"] = psutil.disk_usage('/').free
             
             return system_info
+    except subprocess.TimeoutExpired:
+        print("Warning: Detecting system timed out after 30 seconds")
+        # Fall through to basic system info
     except (subprocess.CalledProcessError, json.JSONDecodeError) as e:
         print(f"Warning: Failed to get detailed system info: {e}")
     
@@ -204,8 +210,11 @@ def get_system_info():
 def get_container_status():
     containers = {}
     try:
-        result = subprocess.run(["docker", "ps", "-a", "--format", "{{.Names}}|{{.Status}}|{{.Ports}}"], 
-                               capture_output=True, text=True, check=True)
+        # Add timeout to prevent hanging
+        result = subprocess.run(
+            ["docker", "ps", "-a", "--format", "{{.Names}}|{{.Status}}|{{.Ports}}"], 
+            capture_output=True, text=True, check=True, timeout=15
+        )
         lines = result.stdout.strip().split("\n")
         for line in lines:
             if line:
@@ -229,14 +238,26 @@ def get_container_status():
                         "status": status,
                         "ports": port_mappings
                     }
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        pass
+    except subprocess.TimeoutExpired:
+        print("Warning: Docker status check timed out after 15 seconds")
+        # Return empty dictionary with error status
+        containers["error"] = {
+            "status": "error",
+            "message": "Docker command timed out"
+        }
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+        print(f"Error getting container status: {str(e)}")
+        # Return empty dictionary with error status
+        containers["error"] = {
+            "status": "error",
+            "message": f"Docker command failed: {str(e)}"
+        }
     return containers
 
 # Generate docker-compose file
 def generate_docker_compose(config, services):
     # Build command based on selected services
-    cmd = [os.path.join(BASE_DIR, "scripts", "generate-compose.sh")]
+    cmd = [os.path.join(SCRIPT_DIR, "generate-compose.sh")]
     
     # Add Arr Apps
     if any(services["arr_apps"].values()):
@@ -322,6 +343,8 @@ CONTAINER_NETWORK=vpn_network
 
 # Run installation in a separate thread
 def run_installation(config, services):
+    max_retries = 3  # Maximum number of retries for failed operations
+    
     try:
         # Update installation status
         config["installation_status"] = "in_progress"
@@ -331,67 +354,149 @@ def run_installation(config, services):
         log_installation("Generating docker-compose.yml...")
         result = generate_docker_compose(config, services)
         if not result["success"]:
-            log_installation(f"Failed to generate docker-compose.yml: {result['error']}")
+            log_installation(f"Failed to generate docker-compose.yml: {result.get('error', 'Unknown error')}")
             config["installation_status"] = "failed"
             save_config(config)
             return
         
         # Create .env file
         log_installation("Creating .env file...")
-        env_file_path = create_env_file(config)
+        try:
+            env_file_path = create_env_file(config)
+            log_installation(f"Created .env file at {env_file_path}")
+        except Exception as e:
+            log_installation(f"Failed to create .env file: {str(e)}")
+            config["installation_status"] = "failed"
+            save_config(config)
+            return
         
         # Install Docker if not installed
         if not is_docker_installed():
             log_installation("Installing Docker...")
-            try:
-                subprocess.run([
-                    "curl", "-fsSL", "https://get.docker.com", "-o", "get-docker.sh"
-                ], check=True)
-                subprocess.run(["sh", "get-docker.sh"], check=True)
-                os.remove("get-docker.sh")
-            except subprocess.CalledProcessError as e:
-                log_installation(f"Failed to install Docker: {str(e)}")
-                config["installation_status"] = "failed"
-                save_config(config)
-                return
+            for attempt in range(max_retries):
+                try:
+                    # Download the Docker install script with timeout
+                    subprocess.run([
+                        "curl", "-fsSL", "https://get.docker.com", "-o", "get-docker.sh"
+                    ], check=True, timeout=60)
+                    
+                    # Run the Docker install script with timeout
+                    subprocess.run(["sh", "get-docker.sh"], check=True, timeout=300)
+                    
+                    # Clean up
+                    if os.path.exists("get-docker.sh"):
+                        os.remove("get-docker.sh")
+                    
+                    log_installation("Docker installed successfully")
+                    break
+                except subprocess.TimeoutExpired:
+                    log_installation(f"Docker installation timed out (attempt {attempt+1}/{max_retries})")
+                    if attempt == max_retries - 1:
+                        log_installation("Failed to install Docker: operation timed out")
+                        config["installation_status"] = "failed"
+                        save_config(config)
+                        return
+                except subprocess.CalledProcessError as e:
+                    log_installation(f"Error installing Docker (attempt {attempt+1}/{max_retries}): {str(e)}")
+                    if attempt == max_retries - 1:
+                        log_installation("Failed to install Docker after multiple attempts")
+                        config["installation_status"] = "failed"
+                        save_config(config)
+                        return
+                
+                # Wait before retrying
+                time.sleep(5)
         
         # Install Tailscale if enabled
         if config["tailscale"]["enabled"]:
             log_installation("Installing Tailscale...")
-            try:
-                subprocess.run([
-                    "curl", "-fsSL", "https://tailscale.com/install.sh", "-o", "install-tailscale.sh"
-                ], check=True)
-                subprocess.run(["sh", "install-tailscale.sh"], check=True)
-                os.remove("install-tailscale.sh")
-                
-                # Set up Tailscale if auth key provided
-                if config["tailscale"]["auth_key"]:
+            for attempt in range(max_retries):
+                try:
+                    # Download the Tailscale install script with timeout
                     subprocess.run([
-                        "sudo", "tailscale", "up", 
-                        "--authkey", config["tailscale"]["auth_key"],
-                        "--accept-routes=false"
-                    ], check=True)
-            except subprocess.CalledProcessError as e:
-                log_installation(f"Failed to install Tailscale: {str(e)}")
+                        "curl", "-fsSL", "https://tailscale.com/install.sh", "-o", "install-tailscale.sh"
+                    ], check=True, timeout=60)
+                    
+                    # Run the Tailscale install script with timeout
+                    subprocess.run(["sh", "install-tailscale.sh"], check=True, timeout=120)
+                    
+                    # Clean up
+                    if os.path.exists("install-tailscale.sh"):
+                        os.remove("install-tailscale.sh")
+                    
+                    # Set up Tailscale if auth key provided
+                    if config["tailscale"]["auth_key"]:
+                        subprocess.run([
+                            "sudo", "tailscale", "up", 
+                            "--authkey", config["tailscale"]["auth_key"],
+                            "--accept-routes=false"
+                        ], check=True, timeout=60)
+                    
+                    log_installation("Tailscale installed successfully")
+                    break
+                except subprocess.TimeoutExpired:
+                    log_installation(f"Tailscale installation timed out (attempt {attempt+1}/{max_retries})")
+                    if attempt == max_retries - 1:
+                        log_installation("Failed to install Tailscale: operation timed out")
+                        # This is non-critical, so we continue with the installation
+                except subprocess.CalledProcessError as e:
+                    log_installation(f"Error installing Tailscale (attempt {attempt+1}/{max_retries}): {str(e)}")
+                    if attempt == max_retries - 1:
+                        log_installation("Failed to install Tailscale after multiple attempts")
+                        # This is non-critical, so we continue with the installation
+                
+                # Wait before retrying
+                time.sleep(5)
         
         # Start Docker Compose stack
         log_installation("Starting Docker Compose stack...")
-        try:
-            subprocess.run([
-                "docker", "compose", 
-                "-f", os.path.join(BASE_DIR, "docker-compose.yml"),
-                "up", "-d"
-            ], check=True)
-            log_installation("Docker Compose stack started successfully")
-            config["installation_status"] = "completed"
-        except subprocess.CalledProcessError as e:
-            log_installation(f"Failed to start Docker Compose stack: {str(e)}")
-            config["installation_status"] = "failed"
+        for attempt in range(max_retries):
+            try:
+                # Get the path to the docker-compose.yml file
+                docker_compose_file = os.path.join(BASE_DIR, "docker-compose.yml")
+                
+                # Check if the file exists, if not, look in the docker-compose directory
+                if not os.path.exists(docker_compose_file):
+                    docker_compose_file = os.path.join(DOCKER_COMPOSE_DIR, "docker-compose.yml")
+                
+                # Log the file path for debugging
+                log_installation(f"Using docker-compose file: {docker_compose_file}")
+                
+                # Validate that the file exists
+                if not os.path.exists(docker_compose_file):
+                    log_installation(f"Error: Docker compose file not found at {docker_compose_file}")
+                    config["installation_status"] = "failed"
+                    save_config(config)
+                    return
+                
+                # Start the Docker Compose stack with timeout
+                subprocess.run([
+                    "docker", "compose", 
+                    "-f", docker_compose_file,
+                    "up", "-d"
+                ], check=True, timeout=300)  # 5 minutes timeout
+                
+                log_installation("Docker Compose stack started successfully")
+                config["installation_status"] = "completed"
+                break
+            except subprocess.TimeoutExpired:
+                log_installation(f"Docker Compose startup timed out (attempt {attempt+1}/{max_retries})")
+                if attempt == max_retries - 1:
+                    log_installation("Failed to start Docker Compose: operation timed out")
+                    config["installation_status"] = "failed"
+            except subprocess.CalledProcessError as e:
+                log_installation(f"Error starting Docker Compose (attempt {attempt+1}/{max_retries}): {str(e)}")
+                if attempt == max_retries - 1:
+                    log_installation("Failed to start Docker Compose after multiple attempts")
+                    config["installation_status"] = "failed"
+            
+            # Wait before retrying
+            time.sleep(10)
         
         save_config(config)
+        log_installation(f"Installation completed with status: {config['installation_status']}")
     except Exception as e:
-        log_installation(f"Installation failed with error: {str(e)}")
+        log_installation(f"Installation failed with unexpected error: {str(e)}")
         config["installation_status"] = "failed"
         save_config(config)
 
@@ -399,6 +504,51 @@ def run_installation(config, services):
 @app.route('/api/system', methods=['GET'])
 def api_system_info():
     return jsonify(get_system_info())
+
+@app.route('/api/drives', methods=['GET'])
+def api_drives():
+    drives = []
+    try:
+        # This is a more reliable way to get drive information using lsblk
+        result = subprocess.run(
+            ["lsblk", "-o", "NAME,SIZE,TYPE,FSTYPE", "-J"],
+            capture_output=True, text=True, check=True, timeout=10
+        )
+        data = json.loads(result.stdout)
+        
+        for device in data.get("blockdevices", []):
+            if device.get("type") == "disk":
+                for partition in device.get("children", []):
+                    if (partition.get("type") == "part" and 
+                        partition.get("fstype") and 
+                        partition.get("fstype") != "swap"):
+                        
+                        drives.append({
+                            "device": f"/dev/{partition['name']}",
+                            "size": partition["size"],
+                            "type": partition["fstype"]
+                        })
+    except Exception as e:
+        # Fallback to a simpler approach if the JSON output fails
+        try:
+            result = subprocess.run(
+                ["lsblk", "-o", "NAME,SIZE,TYPE,FSTYPE"], 
+                capture_output=True, text=True, check=True, timeout=10
+            )
+            
+            lines = result.stdout.strip().split('\n')[1:]  # Skip header
+            for line in lines:
+                parts = line.split()
+                if len(parts) >= 4 and parts[2] == "part" and parts[3] and parts[3] != "swap":
+                    drives.append({
+                        "device": f"/dev/{parts[0].replace('├─', '').replace('└─', '')}",
+                        "size": parts[1],
+                        "type": parts[3]
+                    })
+        except Exception as inner_e:
+            print(f"Error in fallback drive detection: {str(inner_e)}")
+    
+    return jsonify({"drives": drives})
 
 @app.route('/api/config', methods=['GET'])
 def api_get_config():
@@ -460,9 +610,16 @@ def api_generate_compose():
 @app.route('/api/restart', methods=['POST'])
 def api_restart():
     try:
+        # Get the path to the docker-compose.yml file
+        docker_compose_file = os.path.join(BASE_DIR, "docker-compose.yml")
+        
+        # Check if the file exists, if not, look in the docker-compose directory
+        if not os.path.exists(docker_compose_file):
+            docker_compose_file = os.path.join(DOCKER_COMPOSE_DIR, "docker-compose.yml")
+            
         subprocess.run([
             "docker", "compose", 
-            "-f", os.path.join(BASE_DIR, "docker-compose.yml"),
+            "-f", docker_compose_file,
             "restart"
         ], check=True)
         return jsonify({"status": "success"})
@@ -499,14 +656,38 @@ def api_stop_container(container):
     except subprocess.CalledProcessError as e:
         return jsonify({"status": "error", "message": str(e)})
 
+# Create CSS directory
+@app.route('/css/<path:path>')
+def serve_css(path):
+    return send_from_directory('../web-ui/css', path)
+
+# Create JS directory
+@app.route('/js/<path:path>')
+def serve_js(path):
+    return send_from_directory('../web-ui/js', path)
+
+# Create images directory
+@app.route('/images/<path:path>')
+def serve_images(path):
+    return send_from_directory('../web-ui/images', path)
+
 # Serve the front-end
 @app.route('/')
 def index():
-    return send_from_directory('../web-ui', 'index.html')
+    try:
+        return send_from_directory('../web-ui', 'index.html')
+    except FileNotFoundError:
+        # If the file doesn't exist, return a basic template
+        return render_template('default_index.html', 
+                            system_info=get_system_info(),
+                            container_status=get_container_status())
 
 @app.route('/<path:path>')
 def serve_static(path):
-    return send_from_directory('../web-ui', path)
+    try:
+        return send_from_directory('../web-ui', path)
+    except FileNotFoundError:
+        return "File not found", 404
 
 # Main entry point
 if __name__ == '__main__':

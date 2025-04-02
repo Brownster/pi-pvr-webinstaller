@@ -4,6 +4,9 @@
 
 set -euo pipefail
 
+# Get the script directory (with support for symlinks)
+SCRIPT_DIR="$( cd -- "$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")")" &> /dev/null && pwd )"
+
 # Variables
 PORT=8080
 SERVER_IP=$(hostname -I | awk '{print $1}')
@@ -680,7 +683,8 @@ DOCKER_DIR = os.path.join(HOME_DIR, "docker")
 ENV_FILE = os.path.join(DOCKER_DIR, ".env")
 INSTALLER_DIR = os.path.join(HOME_DIR, ".pi-pvr-installer")
 INSTALLER_LOG = os.path.join(INSTALLER_DIR, "installer.log")
-ORIG_SCRIPT_PATH = os.path.join(os.path.dirname(SCRIPT_DIR), "pi-pvr.sh")
+BASE_DIR = os.path.dirname(SCRIPT_DIR)
+ORIG_SCRIPT_PATH = os.path.join(BASE_DIR, "pi-pvr.sh")
 
 # Global config object
 config = {
@@ -1173,41 +1177,123 @@ def setup_tailscale():
     with open(INSTALLER_LOG, "a") as log:
         log.write("Installing Tailscale...\n")
     
-    # Install Tailscale
-    try:
-        subprocess.run("curl -fsSL https://tailscale.com/install.sh | bash", shell=True, check=True)
-        
-        # Start Tailscale with auth key if provided
-        if config["tailscale_auth_key"]:
-            cmd = f"sudo tailscale up --accept-routes=false --authkey={config['tailscale_auth_key']}"
-        else:
-            cmd = "sudo tailscale up --accept-routes=false"
-        
-        subprocess.run(cmd, shell=True, check=True)
-        
-        with open(INSTALLER_LOG, "a") as log:
-            log.write("Tailscale installed and running\n")
-    except subprocess.CalledProcessError as e:
-        with open(INSTALLER_LOG, "a") as log:
-            log.write(f"Tailscale installation failed: {str(e)}\n")
-        raise
+    # Install Tailscale with retry mechanism
+    max_retries = 3
+    retry_delay = 5  # seconds
+    
+    for attempt in range(max_retries):
+        try:
+            # Download Tailscale installer with timeout
+            download_cmd = "curl -fsSL https://tailscale.com/install.sh -o tailscale-install.sh"
+            subprocess.run(download_cmd, shell=True, check=True, timeout=60)
+            
+            # Run installer with timeout
+            install_cmd = "bash tailscale-install.sh"
+            subprocess.run(install_cmd, shell=True, check=True, timeout=120)
+            
+            # Clean up installer script
+            if os.path.exists("tailscale-install.sh"):
+                os.remove("tailscale-install.sh")
+            
+            # Start Tailscale with auth key if provided
+            if config["tailscale_auth_key"]:
+                cmd = f"sudo tailscale up --accept-routes=false --authkey={config['tailscale_auth_key']}"
+            else:
+                cmd = "sudo tailscale up --accept-routes=false"
+            
+            subprocess.run(cmd, shell=True, check=True, timeout=60)
+            
+            with open(INSTALLER_LOG, "a") as log:
+                log.write("Tailscale installed and running\n")
+                
+            # If we get here, installation was successful
+            break
+            
+        except subprocess.TimeoutExpired:
+            with open(INSTALLER_LOG, "a") as log:
+                log.write(f"Tailscale installation timed out (attempt {attempt+1}/{max_retries})\n")
+            
+            # Clean up installer script if it exists
+            if os.path.exists("tailscale-install.sh"):
+                os.remove("tailscale-install.sh")
+                
+            if attempt == max_retries - 1:
+                with open(INSTALLER_LOG, "a") as log:
+                    log.write("Tailscale installation failed: maximum retries reached\n")
+                raise Exception("Tailscale installation timed out after multiple attempts")
+                
+        except subprocess.CalledProcessError as e:
+            with open(INSTALLER_LOG, "a") as log:
+                log.write(f"Tailscale installation failed on attempt {attempt+1}: {str(e)}\n")
+                
+            # Clean up installer script if it exists
+            if os.path.exists("tailscale-install.sh"):
+                os.remove("tailscale-install.sh")
+                
+            if attempt == max_retries - 1:
+                with open(INSTALLER_LOG, "a") as log:
+                    log.write("Tailscale installation failed: maximum retries reached\n")
+                raise
+                
+        # Wait before retrying
+        time.sleep(retry_delay)
 
 def install_dependencies():
     with open(INSTALLER_LOG, "a") as log:
         log.write("Installing dependencies...\n")
     
+    # Define timeouts and retry settings
+    apt_timeout = 120  # 2 minutes for apt commands
+    docker_timeout = 300  # 5 minutes for Docker commands
+    max_retries = 3
+    retry_delay = 5  # seconds
+    
     try:
-        # Update package list
-        subprocess.run("sudo apt update", shell=True, check=True)
+        # Update package list with timeout and retry
+        for attempt in range(max_retries):
+            try:
+                with open(INSTALLER_LOG, "a") as log:
+                    log.write(f"Updating package list (attempt {attempt+1}/{max_retries})...\n")
+                subprocess.run("sudo apt update", shell=True, check=True, timeout=apt_timeout)
+                break
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
+                with open(INSTALLER_LOG, "a") as log:
+                    log.write(f"Failed to update package list: {str(e)}\n")
+                if attempt == max_retries - 1:
+                    with open(INSTALLER_LOG, "a") as log:
+                        log.write("Failed to update package list after multiple attempts\n")
+                    raise
+                time.sleep(retry_delay)
         
-        # Install required packages
-        subprocess.run("sudo apt install -y curl jq git", shell=True, check=True)
+        # Install required packages with timeout and retry
+        for attempt in range(max_retries):
+            try:
+                with open(INSTALLER_LOG, "a") as log:
+                    log.write(f"Installing basic dependencies (attempt {attempt+1}/{max_retries})...\n")
+                subprocess.run("sudo apt install -y curl jq git", shell=True, check=True, timeout=apt_timeout)
+                break
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
+                with open(INSTALLER_LOG, "a") as log:
+                    log.write(f"Failed to install basic dependencies: {str(e)}\n")
+                if attempt == max_retries - 1:
+                    with open(INSTALLER_LOG, "a") as log:
+                        log.write("Failed to install basic dependencies after multiple attempts\n")
+                    raise
+                time.sleep(retry_delay)
         
         # Remove conflicting Docker packages
-        subprocess.run("for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt-get remove -y $pkg; done", shell=True)
+        try:
+            with open(INSTALLER_LOG, "a") as log:
+                log.write("Removing conflicting Docker packages...\n")
+            subprocess.run("for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt-get remove -y $pkg; done", 
+                          shell=True, timeout=apt_timeout)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
+            with open(INSTALLER_LOG, "a") as log:
+                log.write(f"Warning: Failed to remove conflicting packages: {str(e)}\n")
+                log.write("Continuing with Docker installation anyway\n")
         
-        # Install Docker
-        subprocess.run("""
+        # Install Docker with timeout and retry
+        docker_install_commands = """
 sudo apt-get update
 sudo apt-get install -y ca-certificates curl
 sudo install -m 0755 -d /etc/apt/keyrings
@@ -1216,16 +1302,45 @@ sudo chmod a+r /etc/apt/keyrings/docker.asc
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-""", shell=True, check=True)
+"""
         
-        # Verify Docker installation
-        subprocess.run("sudo docker run hello-world", shell=True, check=True)
+        for attempt in range(max_retries):
+            try:
+                with open(INSTALLER_LOG, "a") as log:
+                    log.write(f"Installing Docker (attempt {attempt+1}/{max_retries})...\n")
+                subprocess.run(docker_install_commands, shell=True, check=True, timeout=docker_timeout)
+                break
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
+                with open(INSTALLER_LOG, "a") as log:
+                    log.write(f"Failed to install Docker: {str(e)}\n")
+                if attempt == max_retries - 1:
+                    with open(INSTALLER_LOG, "a") as log:
+                        log.write("Failed to install Docker after multiple attempts\n")
+                    raise
+                time.sleep(retry_delay)
+        
+        # Verify Docker installation with timeout and retry
+        for attempt in range(max_retries):
+            try:
+                with open(INSTALLER_LOG, "a") as log:
+                    log.write(f"Verifying Docker installation (attempt {attempt+1}/{max_retries})...\n")
+                subprocess.run("sudo docker run --rm hello-world", shell=True, check=True, timeout=60)
+                break
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
+                with open(INSTALLER_LOG, "a") as log:
+                    log.write(f"Failed to verify Docker: {str(e)}\n")
+                if attempt == max_retries - 1:
+                    with open(INSTALLER_LOG, "a") as log:
+                        log.write("Warning: Docker verification failed, but continuing anyway\n")
+                    # Don't raise an exception here, as Docker might be installed correctly
+                    # but the hello-world test could fail for network reasons
+                time.sleep(retry_delay)
         
         with open(INSTALLER_LOG, "a") as log:
             log.write("Dependencies installed successfully\n")
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         with open(INSTALLER_LOG, "a") as log:
-            log.write(f"Dependency installation failed: {str(e)}\n")
+            log.write(f"Dependency installation failed with error: {str(e)}\n")
         raise
 
 def setup_pia_vpn():
@@ -1635,7 +1750,7 @@ create_web_installer_option() {
   log "Adding web installer option to pi-pvr.sh..."
   
   # Check if pi-pvr.sh exists
-  if [[ -f "/home/marc/Documents/github/PI-PVR-0.1/pi-pvr.sh" ]]; then
+  if [[ -f "$SCRIPT_DIR/pi-pvr.sh" ]]; then
     # Create a function to start the web installer
     START_WEB_INSTALLER_FUNCTION='# Start the web-based installer
 start_web_installer() {
@@ -1648,7 +1763,7 @@ start_web_installer() {
     log "Web installer integration complete"
     
     # Make the script executable
-    chmod +x "/home/marc/Documents/github/PI-PVR-0.1/pi-pvr.sh"
+    chmod +x "$SCRIPT_DIR/pi-pvr.sh"
     
     log "Web installer option added to pi-pvr.sh"
   else

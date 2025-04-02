@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PI-PVR Ultimate Media Stack - Installation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <header>
+        <div class="menu-toggle" id="menu-toggle">
+            <i class="fas fa-bars"></i>
+        </div>
+        <div class="logo">
+            <i class="fas fa-server"></i>
+            <span>PI-PVR Ultimate</span>
+        </div>
+        <div class="theme-toggle" id="theme-toggle">
+            <i class="fas fa-moon"></i>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="sidebar" id="sidebar">
+            <ul class="sidebar-nav">
+                <li><a href="/"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="/install" class="active"><i class="fas fa-download"></i> Installation</a></li>
+                <li><a href="/services"><i class="fas fa-cogs"></i> Services</a></li>
+                <li><a href="/storage"><i class="fas fa-hdd"></i> Storage</a></li>
+                <li><a href="/network"><i class="fas fa-network-wired"></i> Network</a></li>
+                <li><a href="/settings"><i class="fas fa-sliders-h"></i> Settings</a></li>
+                <li><a href="/logs"><i class="fas fa-clipboard-list"></i> Logs</a></li>
+                <li><a href="/help"><i class="fas fa-question-circle"></i> Help</a></li>
+            </ul>
+        </div>
+
+        <div class="main-content" id="main-content">
+            <h1 class="page-title"><i class="fas fa-download"></i> Installation</h1>
+            
+            <div class="install-container">
+                <div class="step-container" id="step-1">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <h2 class="step-title">VPN Configuration</h2>
+                    </div>
+                    <div class="step-content">
+                        <p>Configure your VPN settings for secure connections.</p>
+                        <form id="vpn-form">
+                            <div class="form-group">
+                                <label class="form-label" for="vpn-provider">VPN Provider</label>
+                                <select class="form-control" id="vpn-provider" name="vpn-provider">
+                                    <option value="pia">Private Internet Access</option>
+                                    <option value="nordvpn">NordVPN</option>
+                                    <option value="expressvpn">ExpressVPN</option>
+                                    <option value="surfshark">Surfshark</option>
+                                    <option value="mullvad">Mullvad</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="vpn-username">Username</label>
+                                <input type="text" class="form-control" id="vpn-username" name="vpn-username" placeholder="Enter your VPN username">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="vpn-password">Password</label>
+                                <input type="password" class="form-control" id="vpn-password" name="vpn-password" placeholder="Enter your VPN password">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="vpn-region">Region</label>
+                                <select class="form-control" id="vpn-region" name="vpn-region">
+                                    <option value="netherlands">Netherlands</option>
+                                    <option value="switzerland">Switzerland</option>
+                                    <option value="sweden">Sweden</option>
+                                    <option value="uk">United Kingdom</option>
+                                    <option value="us-east">US East</option>
+                                    <option value="us-west">US West</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <div class="toggle-container">
+                                    <span>Enable VPN</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="vpn-enabled" name="vpn-enabled" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="step-container" id="step-2">
+                    <div class="step-header">
+                        <div class="step-number">2</div>
+                        <h2 class="step-title">Tailscale Configuration</h2>
+                    </div>
+                    <div class="step-content">
+                        <p>Set up Tailscale for secure remote access to your media server.</p>
+                        <form id="tailscale-form">
+                            <div class="form-group">
+                                <label class="form-label" for="tailscale-auth-key">Tailscale Auth Key (Optional)</label>
+                                <input type="text" class="form-control" id="tailscale-auth-key" name="tailscale-auth-key" placeholder="Enter your Tailscale auth key">
+                                <small>You can leave this blank if you want to authorize manually later.</small>
+                            </div>
+                            <div class="form-group">
+                                <div class="toggle-container">
+                                    <span>Enable Tailscale</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="tailscale-enabled" name="tailscale-enabled">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="step-container" id="step-3">
+                    <div class="step-header">
+                        <div class="step-number">3</div>
+                        <h2 class="step-title">Storage Configuration</h2>
+                    </div>
+                    <div class="step-content">
+                        <p>Configure your storage for media files and downloads.</p>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Available Drives</label>
+                            <div id="drive-list">
+                                <div class="card" style="margin-bottom: 15px;">
+                                    <p>Loading available drives...</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form id="storage-form">
+                            <div class="form-group">
+                                <label class="form-label" for="share-method">Share Method</label>
+                                <select class="form-control" id="share-method" name="share-method">
+                                    <option value="samba">Samba (Windows, Mac, Linux)</option>
+                                    <option value="nfs">NFS (Linux Only)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label" for="storage-mount">Storage Mount Point</label>
+                                <input type="text" class="form-control" id="storage-mount" name="storage-mount" value="/mnt/storage">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label" for="download-mount">Download Mount Point</label>
+                                <input type="text" class="form-control" id="download-mount" name="download-mount" value="/mnt/downloads">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="step-container" id="step-4">
+                    <div class="step-header">
+                        <div class="step-number">4</div>
+                        <h2 class="step-title">Service Selection</h2>
+                    </div>
+                    <div class="step-content">
+                        <p>Choose the services you want to install.</p>
+                        
+                        <div class="service-categories">
+                            <div class="category">
+                                <h3>Media Management</h3>
+                                <div class="service-options">
+                                    <div class="form-group">
+                                        <div class="toggle-container">
+                                            <span>Sonarr (TV Shows)</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="service-sonarr" name="service-sonarr" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <div class="toggle-container">
+                                            <span>Radarr (Movies)</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="service-radarr" name="service-radarr" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <div class="toggle-container">
+                                            <span>Prowlarr (Indexers)</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="service-prowlarr" name="service-prowlarr" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <div class="toggle-container">
+                                            <span>Lidarr (Music)</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="service-lidarr" name="service-lidarr">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <div class="toggle-container">
+                                            <span>Bazarr (Subtitles)</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="service-bazarr" name="service-bazarr">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="category">
+                                <h3>Download Clients</h3>
+                                <div class="service-options">
+                                    <div class="form-group">
+                                        <div class="toggle-container">
+                                            <span>Transmission (Torrent)</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="service-transmission" name="service-transmission" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <div class="toggle-container">
+                                            <span>qBittorrent</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="service-qbittorrent" name="service-qbittorrent">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <div class="toggle-container">
+                                            <span>NZBGet (Usenet)</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="service-nzbget" name="service-nzbget" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <div class="toggle-container">
+                                            <span>SABnzbd</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="service-sabnzbd" name="service-sabnzbd">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="category">
+                                <h3>Media Servers</h3>
+                                <div class="service-options">
+                                    <div class="form-group">
+                                        <div class="toggle-container">
+                                            <span>Jellyfin</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="service-jellyfin" name="service-jellyfin" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <div class="toggle-container">
+                                            <span>Plex</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="service-plex" name="service-plex">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <div class="toggle-container">
+                                            <span>Emby</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="service-emby" name="service-emby">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="category">
+                                <h3>Utilities</h3>
+                                <div class="service-options">
+                                    <div class="form-group">
+                                        <div class="toggle-container">
+                                            <span>Overseerr (Requests)</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="service-overseerr" name="service-overseerr">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <div class="toggle-container">
+                                            <span>Heimdall (Dashboard)</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="service-heimdall" name="service-heimdall">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <div class="toggle-container">
+                                            <span>Get iPlayer</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="service-getiplayer" name="service-getiplayer" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <div class="toggle-container">
+                                            <span>Portainer (Docker Management)</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="service-portainer" name="service-portainer">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-container" id="step-5">
+                    <div class="step-header">
+                        <div class="step-number">5</div>
+                        <h2 class="step-title">Review & Install</h2>
+                    </div>
+                    <div class="step-content">
+                        <p>Review your configuration and start the installation.</p>
+                        
+                        <div class="card" style="margin-bottom: 20px;">
+                            <div class="card-header">
+                                <i class="fas fa-check-circle"></i>
+                                <h2 class="card-title">Installation Summary</h2>
+                            </div>
+                            <div class="card-content">
+                                <div id="summary-content">
+                                    <!-- Summary content will be filled by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="steps-nav">
+                            <a href="#" class="action-btn btn-primary" id="btn-restart">Start Over</a>
+                            <a href="#" class="action-btn btn-success" id="btn-install">Start Installation</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step-container hidden" id="step-progress">
+                    <div class="step-header">
+                        <div class="step-number"><i class="fas fa-cog fa-spin"></i></div>
+                        <h2 class="step-title">Installation in Progress</h2>
+                    </div>
+                    <div class="step-content">
+                        <p>Please wait while the installation is completed...</p>
+                        
+                        <div class="progress-container" style="margin: 30px 0;">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="installation-progress" style="width: 0%;"></div>
+                            </div>
+                            <div style="text-align: center; margin-top: 10px;">
+                                <span id="installation-percentage">0%</span> - <span id="installation-stage">Preparing...</span>
+                            </div>
+                        </div>
+                        
+                        <div class="log-container">
+                            <h3>Installation Log</h3>
+                            <pre id="installation-log" style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; max-height: 200px; overflow-y: auto;">Installation started...</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch available drives for storage configuration
+            function fetchDrives() {
+                fetch('/api/drives')
+                    .then(response => response.json())
+                    .then(data => {
+                        const driveList = document.getElementById('drive-list');
+                        
+                        if (!data.drives || data.drives.length === 0) {
+                            driveList.innerHTML = '<div class="card"><p>No drives detected. Please connect a storage device.</p></div>';
+                            return;
+                        }
+                        
+                        let drivesHTML = '';
+                        data.drives.forEach((drive, index) => {
+                            drivesHTML += `
+                                <div class="card" style="margin-bottom: 10px; padding: 15px;">
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <div>
+                                            <strong>${drive.device}</strong> (${drive.size})
+                                            <div><small>Type: ${drive.type}</small></div>
+                                        </div>
+                                        <div>
+                                            <select class="form-control" id="drive-use-${index}" style="width: 150px;">
+                                                <option value="">Not Used</option>
+                                                <option value="media">Media Storage</option>
+                                                <option value="downloads">Downloads</option>
+                                                <option value="both">Both Media & Downloads</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        driveList.innerHTML = drivesHTML;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching drives:', error);
+                        document.getElementById('drive-list').innerHTML = 
+                            '<div class="card"><p class="error">Error loading drives. Please try again.</p></div>';
+                    });
+            }
+            
+            // Update the summary when the user changes options
+            function updateSummary() {
+                const summaryContent = document.getElementById('summary-content');
+                
+                // VPN Configuration
+                const vpnEnabled = document.getElementById('vpn-enabled').checked;
+                const vpnProvider = document.getElementById('vpn-provider').value;
+                const vpnRegion = document.getElementById('vpn-region').value;
+                
+                // Tailscale Configuration
+                const tailscaleEnabled = document.getElementById('tailscale-enabled').checked;
+                
+                // Storage Configuration
+                const shareMethod = document.getElementById('share-method').value;
+                
+                // Service Selection
+                const sonarrEnabled = document.getElementById('service-sonarr').checked;
+                const radarrEnabled = document.getElementById('service-radarr').checked;
+                const prowlarrEnabled = document.getElementById('service-prowlarr').checked;
+                const lidarrEnabled = document.getElementById('service-lidarr').checked;
+                const bazarrEnabled = document.getElementById('service-bazarr').checked;
+                
+                const transmissionEnabled = document.getElementById('service-transmission').checked;
+                const qbittorrentEnabled = document.getElementById('service-qbittorrent').checked;
+                const nzbgetEnabled = document.getElementById('service-nzbget').checked;
+                const sabnzbdEnabled = document.getElementById('service-sabnzbd').checked;
+                
+                const jellyfinEnabled = document.getElementById('service-jellyfin').checked;
+                const plexEnabled = document.getElementById('service-plex').checked;
+                const embyEnabled = document.getElementById('service-emby').checked;
+                
+                // Build summary HTML
+                let summaryHTML = '';
+                
+                // VPN Summary
+                summaryHTML += '<h3>VPN Configuration</h3>';
+                summaryHTML += '<ul>';
+                if (vpnEnabled) {
+                    summaryHTML += `<li>VPN Provider: ${vpnProvider.toUpperCase()}</li>`;
+                    summaryHTML += `<li>Region: ${vpnRegion}</li>`;
+                } else {
+                    summaryHTML += '<li>VPN: Disabled</li>';
+                }
+                summaryHTML += '</ul>';
+                
+                // Tailscale Summary
+                summaryHTML += '<h3>Tailscale</h3>';
+                summaryHTML += '<ul>';
+                summaryHTML += `<li>Tailscale: ${tailscaleEnabled ? 'Enabled' : 'Disabled'}</li>`;
+                summaryHTML += '</ul>';
+                
+                // Storage Summary
+                summaryHTML += '<h3>Storage</h3>';
+                summaryHTML += '<ul>';
+                summaryHTML += `<li>Share Method: ${shareMethod === 'samba' ? 'Samba (Windows, Mac, Linux)' : 'NFS (Linux Only)'}</li>`;
+                summaryHTML += '</ul>';
+                
+                // Services Summary
+                summaryHTML += '<h3>Services</h3>';
+                summaryHTML += '<ul>';
+                
+                // Arr Apps
+                let arrApps = [];
+                if (sonarrEnabled) arrApps.push('Sonarr');
+                if (radarrEnabled) arrApps.push('Radarr');
+                if (prowlarrEnabled) arrApps.push('Prowlarr');
+                if (lidarrEnabled) arrApps.push('Lidarr');
+                if (bazarrEnabled) arrApps.push('Bazarr');
+                
+                summaryHTML += '<li>Arr Apps: ' + (arrApps.length > 0 ? arrApps.join(', ') : 'None') + '</li>';
+                
+                // Download Clients
+                let downloadClients = [];
+                if (transmissionEnabled) downloadClients.push('Transmission');
+                if (qbittorrentEnabled) downloadClients.push('qBittorrent');
+                if (nzbgetEnabled) downloadClients.push('NZBGet');
+                if (sabnzbdEnabled) downloadClients.push('SABnzbd');
+                
+                summaryHTML += '<li>Download Clients: ' + (downloadClients.length > 0 ? downloadClients.join(', ') : 'None') + '</li>';
+                
+                // Media Servers
+                let mediaServers = [];
+                if (jellyfinEnabled) mediaServers.push('Jellyfin');
+                if (plexEnabled) mediaServers.push('Plex');
+                if (embyEnabled) mediaServers.push('Emby');
+                
+                summaryHTML += '<li>Media Servers: ' + (mediaServers.length > 0 ? mediaServers.join(', ') : 'None') + '</li>';
+                
+                summaryHTML += '</ul>';
+                
+                // Update the summary content
+                summaryContent.innerHTML = summaryHTML;
+            }
+            
+            // Function to simulate the installation progress
+            function simulateInstallation() {
+                const progressBar = document.getElementById('installation-progress');
+                const percentageElement = document.getElementById('installation-percentage');
+                const stageElement = document.getElementById('installation-stage');
+                const logElement = document.getElementById('installation-log');
+                
+                // Hide the review step and show the progress step
+                document.getElementById('step-5').classList.add('hidden');
+                document.getElementById('step-progress').classList.remove('hidden');
+                
+                // Stages of installation
+                const stages = [
+                    { name: 'Installing dependencies', duration: 5000 },
+                    { name: 'Setting up VPN', duration: 3000 },
+                    { name: 'Configuring Tailscale', duration: 2000 },
+                    { name: 'Mounting drives', duration: 4000 },
+                    { name: 'Setting up file sharing', duration: 3000 },
+                    { name: 'Creating Docker containers', duration: 6000 },
+                    { name: 'Starting services', duration: 3000 },
+                    { name: 'Finalizing installation', duration: 2000 }
+                ];
+                
+                let currentStage = 0;
+                let elapsedTime = 0;
+                const totalDuration = stages.reduce((sum, stage) => sum + stage.duration, 0);
+                
+                // Start the progress simulation
+                const intervalId = setInterval(() => {
+                    if (currentStage >= stages.length) {
+                        clearInterval(intervalId);
+                        
+                        // Complete the installation
+                        progressBar.style.width = '100%';
+                        percentageElement.textContent = '100%';
+                        stageElement.textContent = 'Complete';
+                        logElement.innerHTML += '\nInstallation completed successfully!\n';
+                        
+                        // Redirect to the dashboard after a short delay
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 2000);
+                        
+                        return;
+                    }
+                    
+                    // Update the current stage
+                    const stage = stages[currentStage];
+                    stageElement.textContent = stage.name;
+                    
+                    // Add log entry for the stage
+                    logElement.innerHTML += `\n[${new Date().toLocaleTimeString()}] ${stage.name}...`;
+                    
+                    // Update progress
+                    elapsedTime += stage.duration;
+                    const progress = Math.min(Math.round((elapsedTime / totalDuration) * 100), 100);
+                    progressBar.style.width = `${progress}%`;
+                    percentageElement.textContent = `${progress}%`;
+                    
+                    // Scroll the log to the bottom
+                    logElement.scrollTop = logElement.scrollHeight;
+                    
+                    // Move to the next stage
+                    currentStage++;
+                }, 2000);
+            }
+            
+            // Initialize the page
+            fetchDrives();
+            updateSummary();
+            
+            // Add event listeners for form changes
+            document.querySelectorAll('input, select').forEach(element => {
+                element.addEventListener('change', updateSummary);
+            });
+            
+            // Add event listener for the install button
+            document.getElementById('btn-install').addEventListener('click', function(e) {
+                e.preventDefault();
+                simulateInstallation();
+            });
+            
+            // Add event listener for the restart button
+            document.getElementById('btn-restart').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.scrollTo(0, 0);
+                document.querySelectorAll('form').forEach(form => form.reset());
+                updateSummary();
+            });
+        });
+    </script>
+</body>
+</html>

@@ -17,10 +17,12 @@
   - **Adaptive Configuration**: Optimizes settings for your specific hardware
 - **🌐 Remote Installation**: Install directly from your laptop to your Raspberry Pi or server
 - **🔄 Modular Architecture**: Mix and match components to build your perfect setup.
-- **🖥️ Modern Web UI**: Easy-to-use interface for installation and management.
-- **📱 Mobile-Friendly**: Responsive design that works on all devices.
-- **🔍 Intelligent Monitoring**: Automated health checks and updates.
+- **🖥️ Modern Web UI**: Easy-to-use interface for installation and management with an intuitive dashboard.
+- **📱 Mobile-Friendly**: Responsive design that works on all devices with real-time notifications.
+- **🔍 Intelligent Monitoring**: Automated health checks, resource monitoring, and container status tracking.
 - **🛡️ Security-Focused**: Built with best practices for keeping your media server secure.
+- **🔄 Real-time Updates**: Live updates of service status, resource usage, and system information.
+- **📊 Comprehensive Dashboard**: Monitor and manage all aspects of your media server from one interface.
 
 ## Requirements
 
@@ -46,18 +48,24 @@ Follow the on-screen prompts to configure the environment, VPN, and file sharing
 
 ### Option 2: Web-Based Installation (Recommended)
 
-For a more user-friendly installation experience with a web interface:
+For a more user-friendly installation experience with a modern web interface:
 
 ```bash
-chmod +x start.sh
-./start.sh
+chmod +x pi-pvr.sh
+./pi-pvr.sh --web-ui
 ```
 
-Then select `Web-based installation` from the menu. This will start a web-based installer accessible at `http://<your-pi-ip>:8080` where you can:
-- Configure all settings through an intuitive interface
-- Monitor installation progress in real-time
-- Easily reconfigure components after installation
-- Access a dashboard for managing your media server
+This will start a web-based installer accessible at `http://<your-pi-ip>:8080` where you can:
+- Configure all settings through an intuitive, mobile-friendly interface
+- Monitor installation progress in real-time with detailed status updates
+- Easily manage your media services after installation with a comprehensive dashboard
+- Monitor system resource usage with real-time graphs and statistics
+- Configure storage, network, and service settings through a user-friendly interface
+- View system and container logs with filtering and search capabilities
+- Receive real-time notifications for important events and status changes
+- Update Docker images and containers with a single click
+- Restart, stop, or start services individually or in batch operations
+- Access detailed documentation and help directly from the interface
 
 ### Option 3: Remote Installation
 

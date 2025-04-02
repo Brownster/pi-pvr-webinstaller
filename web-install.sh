@@ -3,8 +3,8 @@
 
 set -e
 
-# Get the directory of this script
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+# Get the directory of this script (with support for symlinks)
+SCRIPT_DIR="$( cd -- "$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")")" &> /dev/null && pwd )"
 SERVER_IP=$(hostname -I | awk '{print $1}')
 PORT=8080
 

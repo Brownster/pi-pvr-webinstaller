@@ -198,8 +198,8 @@ prepare_remote_directory() {
 upload_project_files() {
   echo -e "${BLUE}Uploading project files...${NC}"
   
-  # Get the project directory
-  PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." &> /dev/null && pwd )"
+  # Get the project directory (with support for symlinks)
+  PROJECT_DIR="$( cd -- "$(dirname -- "$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")")")" &> /dev/null && pwd )"
   
   # Create a temporary tar file
   TEMP_TAR="/tmp/pi-pvr-$(date +%s).tar.gz"

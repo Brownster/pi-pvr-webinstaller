@@ -1,0 +1,21 @@
+# Node.js
+node_modules/
+npm-debug.log
+.npm
+.env
+
+# Config files
+.pi-pvr-config/
+
+# Logs
+*.log
+logs/
+
+# OS-specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

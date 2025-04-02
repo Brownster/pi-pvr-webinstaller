@@ -1,0 +1,20 @@
+{
+  "puid": 1000,
+  "pgid": 1000,
+  "timezone": "Europe/London",
+  "media_dir": "/mnt/media",
+  "downloads_dir": "/mnt/downloads",
+  "docker_dir": "/home/marc/docker",
+  "vpn": {
+    "enabled": true,
+    "provider": "private internet access",
+    "username": "",
+    "password": "",
+    "region": "Netherlands"
+  },
+  "tailscale": {
+    "enabled": false,
+    "auth_key": ""
+  },
+  "installation_status": "not_started"
+}

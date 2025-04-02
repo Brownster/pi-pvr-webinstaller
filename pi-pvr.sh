@@ -1,4 +1,7 @@
 #!/bin/bash
+# Get the directory of this script (with support for symlinks)
+SCRIPT_DIR="$( cd -- "$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")")" &> /dev/null && pwd )"
+
 # Server Variables
 SHARE_METHOD=""
 SERVER_IP=$(hostname -I | awk '{print $1}')
@@ -967,11 +970,17 @@ start_web_installer() {
     INSTALLER_DIR="$HOME/.pi-pvr-installer"
     if [[ ! -d "$INSTALLER_DIR" ]]; then
         echo "Setting up web installer for the first time..."
-        bash "$HOME/Documents/github/PI-PVR-0.1/web-installer.sh"
+        bash "$SCRIPT_DIR/web-installer.sh"
     else
         # Start the installer
         python3 "$INSTALLER_DIR/app.py"
     fi
+}
+
+# Start the new web UI
+start_web_ui() {
+    echo "Starting PI-PVR Web UI..."
+    bash "$SCRIPT_DIR/web-ui.sh"
 }
 
 # Main setup function
@@ -984,6 +993,10 @@ main() {
                 start_web_installer
                 exit 0
                 ;;
+            --web-ui)
+                start_web_ui
+                exit 0
+                ;;
             --update)
                 update_compose_file
                 exit 0
@@ -993,7 +1006,7 @@ main() {
                 ;;
             *)
                 echo "Unknown option: $arg"
-                echo "Usage: $0 [--update] [--debug] [--web-installer]"
+                echo "Usage: $0 [--update] [--debug] [--web-installer] [--web-ui]"
                 exit 1
                 ;;
         esac
