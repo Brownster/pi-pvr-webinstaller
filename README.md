@@ -35,7 +35,24 @@
 
 ## Installation
 
-### Option 1: Command Line Installation
+### Option 1: Using the Start Script (Recommended)
+
+This is the easiest way to start, as it provides a menu of installation options:
+
+```bash
+git clone https://github.com/Brownster/PI-PVR-0.1.git
+cd PI-PVR-0.1
+chmod +x start.sh
+./start.sh
+```
+
+From the menu, select one of the installation options:
+1. Command Line Installation
+2. Web-Based Installation
+3. Remote Installation (coming soon)
+4. Update Existing Installation
+
+### Option 2: Command Line Installation
 
 ```bash
 git clone https://github.com/Brownster/PI-PVR-0.1.git
@@ -46,16 +63,16 @@ chmod +x pi-pvr.sh
 
 Follow the on-screen prompts to configure the environment, VPN, and file sharing.
 
-### Option 2: Web-Based Installation (Recommended)
+### Option 3: Web-Based Installation
 
 For a more user-friendly installation experience with a modern web interface:
 
 ```bash
-chmod +x pi-pvr.sh
-./pi-pvr.sh --web-ui
+chmod +x web-ui.sh
+./web-ui.sh
 ```
 
-This will start a web-based installer accessible at `http://<your-pi-ip>:8080` where you can:
+This will start the web UI server accessible at `http://<your-pi-ip>:8080` where you can:
 - Configure all settings through an intuitive, mobile-friendly interface
 - Monitor installation progress in real-time with detailed status updates
 - Easily manage your media services after installation with a comprehensive dashboard
@@ -67,27 +84,11 @@ This will start a web-based installer accessible at `http://<your-pi-ip>:8080` w
 - Restart, stop, or start services individually or in batch operations
 - Access detailed documentation and help directly from the interface
 
-### Option 3: Remote Installation
-
-To install from your laptop directly to a remote Raspberry Pi or server:
-
-```bash
-chmod +x start.sh
-./start.sh
-```
-
-Then select `Remote installation` from the menu. You'll be prompted to enter:
-- Remote username (e.g., `pi`)
-- Remote hostname or IP (e.g., `raspberrypi.local` or `192.168.1.100`)
-- SSH port (default: 22)
-- Installation directory (default: `/home/pi/pi-pvr`)
-- Installation mode (`web` or `cli`)
-
 ## Usage
 
 ### Modular Service Selection
 
-Create a custom stack with exactly the services you need:
+Create a custom stack with exactly the services you need using the generate-compose.sh script:
 
 ```bash
 # Example: Full Arr suite with Jellyfin and Transmission
@@ -96,6 +97,18 @@ Create a custom stack with exactly the services you need:
 # Example: Complete media center with all components
 ./scripts/generate-compose.sh --all
 ```
+
+Available options for the generate-compose.sh script:
+- `--arr-apps`: Include all Arr applications (Sonarr, Radarr, Lidarr, Readarr, Prowlarr, Bazarr)
+- `--media-server NAME`: Media server to use (jellyfin, plex, emby, all)
+- `--torrent-client NAME`: Torrent client to use (transmission, qbittorrent)
+- `--usenet-client NAME`: Usenet client to use (nzbget, sabnzbd)
+- `--direct-download`: Include JDownloader for direct downloads
+- `--dashboard`: Include Heimdall dashboard
+- `--requests`: Include Overseerr for media requests
+- `--monitoring`: Include Tautulli for Plex monitoring
+- `--proxy`: Include Nginx Proxy Manager
+- `--all`: Include all services
 
 ### Service Management
 
@@ -125,10 +138,11 @@ Access your media server from anywhere using Tailscale:
 
 ### Custom Docker Compose
 
-Modify the environment variables in the `.env` file to customize your setup:
+Create and modify the environment variables in the `.env` file to customize your setup:
 
 ```bash
-cp ./docker-compose/.env.example ./.env
+# The .env file is automatically created during installation, 
+# but you can modify it manually:
 nano ./.env
 ```
 
