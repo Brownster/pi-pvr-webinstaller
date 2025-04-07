@@ -28,10 +28,18 @@ fi
 
 # Install required Python packages
 echo -e "${BLUE}Installing required Python packages...${NC}"
-python3 -m pip install flask flask-cors psutil requests
+if ! command -v pip3 &>/dev/null; then
+    echo -e "${YELLOW}pip not found. Installing pip...${NC}"
+    sudo apt update
+    sudo apt install -y python3-pip
+fi
+sudo pip3 install flask flask-cors psutil requests
 
 # Start the API server
 echo -e "${BLUE}Starting API server...${NC}"
+# Make sure logs directory exists
+mkdir -p "$SCRIPT_DIR/logs"
+
 if [ -f "$API_SCRIPT" ]; then
     # Check if API is already running
     if pgrep -f "python3 $API_SCRIPT" &>/dev/null; then
@@ -39,12 +47,15 @@ if [ -f "$API_SCRIPT" ]; then
     else
         # Start API server in the background
         cd "$SCRIPT_DIR"
-        python3 "$API_SCRIPT" &
+        python3 "$API_SCRIPT" > "$SCRIPT_DIR/logs/api.log" 2>&1 &
         API_PID=$!
         echo -e "${GREEN}API server started with PID: $API_PID${NC}"
         
         # Save PID to file for later cleanup
         echo $API_PID > "$SCRIPT_DIR/.api_pid"
+        
+        # Wait a moment for the server to start
+        sleep 3
     fi
 else
     echo -e "${RED}API script not found at $API_SCRIPT${NC}"
@@ -60,5 +71,18 @@ echo -e "${BLUE}http://${SERVER_IP}:8080${NC}"
 echo -e "\n${YELLOW}Press Ctrl+C to stop the server${NC}"
 echo "=================================="
 
+# Check if server is actually running
+echo -e "${BLUE}Checking if server is responding...${NC}"
+if command -v curl &>/dev/null; then
+    if curl -s --head "http://localhost:8080" | grep "200 OK" > /dev/null; then
+        echo -e "${GREEN}Server is responding correctly!${NC}"
+    else
+        echo -e "${RED}Server is not responding. Check the logs below for errors.${NC}"
+    fi
+else
+    echo -e "${YELLOW}curl not installed, can't verify server status${NC}"
+fi
+
 # Keep script running to show logs
+echo -e "${BLUE}Showing logs (Ctrl+C to stop):${NC}"
 tail -f "$SCRIPT_DIR/logs/api.log" 2>/dev/null || sleep infinity
