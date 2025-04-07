@@ -28,18 +28,20 @@ fi
 chmod +x "$SCRIPT_DIR/pi-pvr.sh"
 
 # Display menu options
-echo -e "${BLUE}Please choose an installation method:${NC}"
+echo -e "${BLUE}Please choose an option:${NC}"
 echo ""
 echo "1) Command Line Installation"
-echo "2) Web-Based Installation (Recommended)"
-echo "3) Remote Installation"
-echo "4) Update Existing Installation"
-echo "5) Reset Configuration (Fix Errors)"
-echo "6) Exit"
+echo "2) Web UI Only"
+echo "3) API Server Only"
+echo "4) Complete Web Interface (API + UI)"
+echo "5) Remote Installation"
+echo "6) Update Existing Installation"
+echo "7) Reset Configuration (Fix Errors)"
+echo "8) Exit"
 echo ""
 
 # Read user choice
-read -p "Enter your choice (1-6): " choice
+read -p "Enter your choice (1-8): " choice
 
 # Process user choice
 case $choice in
@@ -48,26 +50,34 @@ case $choice in
         "$SCRIPT_DIR/pi-pvr.sh"
         ;;
     2)
-        echo -e "${GREEN}Starting Web-Based Installation...${NC}"
+        echo -e "${GREEN}Starting Web UI...${NC}"
         "$SCRIPT_DIR/pi-pvr.sh" --web-ui
         ;;
     3)
+        echo -e "${GREEN}Starting API Server...${NC}"
+        "$SCRIPT_DIR/pi-pvr.sh" --api-server
+        ;;
+    4)
+        echo -e "${GREEN}Starting Complete Web Interface (API + UI)...${NC}"
+        "$SCRIPT_DIR/pi-pvr.sh" --complete-ui
+        ;;
+    5)
         echo -e "${GREEN}Starting Remote Installation...${NC}"
         echo -e "${YELLOW}This feature is coming soon.${NC}"
         sleep 2
         "$SCRIPT_DIR/start.sh"
         ;;
-    4)
+    6)
         echo -e "${GREEN}Updating Existing Installation...${NC}"
         "$SCRIPT_DIR/pi-pvr.sh" --update
         ;;
-    5)
+    7)
         echo -e "${GREEN}Resetting Configuration...${NC}"
         "$SCRIPT_DIR/pi-pvr.sh" --reset-env
         sleep 2
         "$SCRIPT_DIR/start.sh"
         ;;
-    6)
+    8)
         echo -e "${GREEN}Exiting. Thank you for using PI-PVR Ultimate Media Stack!${NC}"
         exit 0
         ;;

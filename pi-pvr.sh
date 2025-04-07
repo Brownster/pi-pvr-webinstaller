@@ -769,7 +769,7 @@ EOF
 # Install required dependencies
 install_dependencies() {
     if [[ "$INSTALL_DEPENDANCIES_SUCCESS" == "1" ]]; then
-        echo "Docker Compose stack is already deployed. Skipping."
+        echo "Dependencies are already installed. Skipping."
         return
     fi
 
@@ -800,6 +800,31 @@ install_dependencies() {
 
     echo "Installing other required dependencies: curl, jq, git..."
     sudo apt-get install -y curl jq git
+
+    echo "Installing Python dependencies for API server..."
+    sudo apt-get install -y python3 python3-pip python3-venv
+    pip3 install --user -r "$SCRIPT_DIR/requirements.txt"
+
+    echo "Installing Node.js and npm for Web UI..."
+    # Install NVM (Node Version Manager)
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+    
+    # Source NVM to use it immediately
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    
+    # Install the latest LTS version of Node.js
+    nvm install --lts
+    
+    # Install web UI dependencies
+    if [ -d "$SCRIPT_DIR/web-ui" ]; then
+        echo "Installing Web UI dependencies..."
+        cd "$SCRIPT_DIR/web-ui"
+        npm install
+        cd "$SCRIPT_DIR"
+    else
+        echo "Web UI directory not found at $SCRIPT_DIR/web-ui, skipping npm install"
+    fi
 
     echo "Verifying Docker installation..."
     sudo docker run hello-world
@@ -989,9 +1014,26 @@ start_web_installer() {
     fi
 }
 
+# Start the API server
+start_api_server() {
+    echo "Starting PI-PVR API Server..."
+    bash "$SCRIPT_DIR/start-api.sh"
+}
+
 # Start the new web UI
 start_web_ui() {
     echo "Starting PI-PVR Web UI..."
+    bash "$SCRIPT_DIR/web-ui.sh"
+}
+
+# Start both web UI and API server
+start_complete_ui() {
+    echo "Starting PI-PVR Complete Web Interface (API + UI)..."
+    # Start the API server in the background
+    bash "$SCRIPT_DIR/start-api.sh" &
+    # Give the API server a moment to start
+    sleep 2
+    # Start the web UI
     bash "$SCRIPT_DIR/web-ui.sh"
 }
 
@@ -1007,6 +1049,14 @@ main() {
                 ;;
             --web-ui)
                 start_web_ui
+                exit 0
+                ;;
+            --api-server)
+                start_api_server
+                exit 0
+                ;;
+            --complete-ui)
+                start_complete_ui
                 exit 0
                 ;;
             --update)
@@ -1028,7 +1078,7 @@ main() {
                 ;;
             *)
                 echo "Unknown option: $arg"
-                echo "Usage: $0 [--update] [--debug] [--web-installer] [--web-ui] [--reset-env]"
+                echo "Usage: $0 [--update] [--debug] [--web-installer] [--web-ui] [--api-server] [--complete-ui] [--reset-env]"
                 exit 1
                 ;;
         esac
@@ -1066,7 +1116,29 @@ main() {
         ["Get_IPlayer"]="${BASE_URL}:${GET_IPLAYER_PORT}"
         ["JellyFin"]="${BASE_URL}:${JELLYFIN_PORT}"
         ["Watchtower"]="(Auto-Updater - no web UI)"
+        ["Web UI"]="${BASE_URL}:8080"
     )
+    
+    # Ask if user wants to start the web interface
+    echo ""
+    echo -e "${YELLOW}Would you like to start the web interface now?${NC}"
+    echo "1) Yes, start complete web interface (API + UI)"
+    echo "2) No, I'll start it later"
+    read -r -p "Enter your choice (1-2): " START_UI_CHOICE
+    
+    if [[ "$START_UI_CHOICE" == "1" ]]; then
+        # Start the complete web interface
+        echo -e "${GREEN}Starting Complete Web Interface...${NC}"
+        echo -e "${GREEN}Access the web UI at:${NC} ${BASE_URL}:8080"
+        echo -e "${YELLOW}Note: This will keep running in the terminal. Press Ctrl+C to stop.${NC}"
+        sleep 2
+        start_complete_ui
+        exit 0
+    else
+        echo -e "${BLUE}You can start the web interface later with:${NC}"
+        echo "  ./start.sh"
+        echo "  Then select option 4 from the menu"
+    fi
 
     # Display services and clickable URLs
     echo "Services and their URLs:"
