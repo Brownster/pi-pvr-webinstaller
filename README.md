@@ -4,6 +4,8 @@
 
 ## Features
 
+![image](https://github.com/user-attachments/assets/60ce9daf-3f7a-4a59-8ab1-5eb4be74a7a7)
+
 - **🔒 VPN Integration**: Routes external traffic through a secure VPN container (Gluetun), supporting multiple providers.
 - **🔗 Tailscale**: Enables secure remote access to your server and Docker containers via Tailscale IP.
 - **📺 Complete Media Management**:
