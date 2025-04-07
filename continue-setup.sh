@@ -73,9 +73,11 @@ CONTAINER_NETWORK="vpn_network"
 
 # Setup Docker network
 echo -e "${BLUE}Setting up Docker network...${NC}"
-if ! docker network ls | grep -q "$CONTAINER_NETWORK"; then
+if ! sudo docker network ls 2>/dev/null | grep -q "$CONTAINER_NETWORK"; then
     echo -e "${YELLOW}Creating Docker network: $CONTAINER_NETWORK${NC}"
-    docker network create "$CONTAINER_NETWORK"
+    sudo docker network create "$CONTAINER_NETWORK" 2>/dev/null || true
+    echo -e "${YELLOW}If you see permission errors, run: sudo usermod -aG docker $USER${NC}"
+    echo -e "${YELLOW}Then log out and log back in to apply the changes${NC}"
 else 
     echo -e "${BLUE}Docker network $CONTAINER_NETWORK already exists${NC}"
 fi
@@ -84,7 +86,15 @@ fi
 echo -e "${BLUE}Checking Docker Compose stack...${NC}"
 if [ -f "$DOCKER_DIR/docker-compose.yml" ]; then
     echo -e "${YELLOW}Docker Compose file found. Starting services...${NC}"
-    cd "$DOCKER_DIR" && docker-compose up -d
+    if command -v docker-compose &>/dev/null; then
+        cd "$DOCKER_DIR" && sudo docker-compose up -d
+    elif command -v docker &>/dev/null && docker compose --help &>/dev/null; then
+        cd "$DOCKER_DIR" && sudo docker compose up -d
+    else
+        echo -e "${RED}Docker Compose not found. Installing...${NC}"
+        sudo apt update && sudo apt install -y docker-compose
+        cd "$DOCKER_DIR" && sudo docker-compose up -d
+    fi
 else
     echo -e "${RED}Docker Compose file not found at $DOCKER_DIR/docker-compose.yml${NC}"
     echo -e "${RED}Please run the setup script again to generate the compose file${NC}"
