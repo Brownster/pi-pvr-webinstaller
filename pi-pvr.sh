@@ -29,13 +29,25 @@ run() {
 create_env_file() {
     echo "Creating .env file for sensitive data..."
     mkdir -p "$DOCKER_DIR"
+    
+    # Check if env file exists but has errors
+    if [[ -f "$ENV_FILE" ]]; then
+        if grep -q "unexpected EOF" "$ENV_FILE" 2>/dev/null || ! grep -q "DOCKER_NETWORK_SUCCESS" "$ENV_FILE" 2>/dev/null; then
+            echo "Existing .env file appears to be corrupted. Recreating it..."
+            rm -f "$ENV_FILE"
+        else
+            echo ".env file already exists and seems valid. Update credentials if necessary."
+            return
+        fi
+    fi
+    
+    # Create new env file if it doesn't exist or was deleted due to corruption
     if [[ ! -f "$ENV_FILE" ]]; then
         read -r -p "Enter your PIA_USERNAME: " PIA_USERNAME
         read -r -s -p "Enter your PIA_PASSWORD: " PIA_PASSWORD
         echo ""
         read -r -p "Enter your TAILSCALE_AUTH_KEY (or press Enter to skip): " TAILSCALE_AUTH_KEY
         
-
         cat > "$ENV_FILE" <<EOF
 #General Docker
 DOCKER_DIR="$HOME/docker"
@@ -1001,12 +1013,22 @@ main() {
                 update_compose_file
                 exit 0
                 ;;
+            --reset-env)
+                if [[ -f "$ENV_FILE" ]]; then
+                    echo "Removing existing .env file..."
+                    rm -f "$ENV_FILE"
+                    echo ".env file removed. You can now restart the installation."
+                else
+                    echo "No .env file found at $ENV_FILE."
+                fi
+                exit 0
+                ;;
             --debug)
                 DEBUG=true
                 ;;
             *)
                 echo "Unknown option: $arg"
-                echo "Usage: $0 [--update] [--debug] [--web-installer] [--web-ui]"
+                echo "Usage: $0 [--update] [--debug] [--web-installer] [--web-ui] [--reset-env]"
                 exit 1
                 ;;
         esac

@@ -34,11 +34,12 @@ echo "1) Command Line Installation"
 echo "2) Web-Based Installation (Recommended)"
 echo "3) Remote Installation"
 echo "4) Update Existing Installation"
-echo "5) Exit"
+echo "5) Reset Configuration (Fix Errors)"
+echo "6) Exit"
 echo ""
 
 # Read user choice
-read -p "Enter your choice (1-5): " choice
+read -p "Enter your choice (1-6): " choice
 
 # Process user choice
 case $choice in
@@ -61,6 +62,12 @@ case $choice in
         "$SCRIPT_DIR/pi-pvr.sh" --update
         ;;
     5)
+        echo -e "${GREEN}Resetting Configuration...${NC}"
+        "$SCRIPT_DIR/pi-pvr.sh" --reset-env
+        sleep 2
+        "$SCRIPT_DIR/start.sh"
+        ;;
+    6)
         echo -e "${GREEN}Exiting. Thank you for using PI-PVR Ultimate Media Stack!${NC}"
         exit 0
         ;;
