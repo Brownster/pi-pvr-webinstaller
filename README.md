@@ -145,6 +145,13 @@ After installation, hardware acceleration should be ready to use. You only need 
 1. Enable hardware acceleration in your media server settings
 2. Choose the correct acceleration method (detected automatically)
 
+## Testing
+
+This project includes unit tests to ensure the stability and reliability of the codebase. The tests cover the following areas:
+
+- **Python API Tests**: Located in the `scripts/test_api.py` file. These tests use the `pytest` framework to verify the functionality of the API endpoints defined in `scripts/api.py`. They cover aspects such as loading and saving configuration, managing services, and retrieving system information. To run these tests, use the command `pytest`.
+- **JavaScript Web UI Tests**: Located in the `web-ui/test.js` file. These tests use the `Jest` framework to verify the functionality of the web UI components. They cover aspects such as making API requests and rendering UI elements. To run these tests, use the command `npm test`.
+
 ## Contributing
 
 Contributions are welcome! Please check out our [ROADMAP.md](ROADMAP.md) for planned features and our [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
