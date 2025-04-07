@@ -336,13 +336,17 @@ EOF
   <p>Configure storage drives for media and downloads.</p>
   
   <form action="/storage-save" method="post">
-    <div>
-      <h3>Available Drives:</h3>
+    <!-- Local USB Drives -->
+    <div class="storage-section">
+      <h3>Local USB Drives</h3>
+      <p>Select how you want to use each connected USB drive:</p>
+      
       <table style="width: 100%; border-collapse: collapse;">
         <tr style="background-color: #f2f2f2;">
           <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Device</th>
           <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Size</th>
           <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Type</th>
+          <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Mount Point</th>
           <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Use For</th>
         </tr>
         {% for drive in drives %}
@@ -351,16 +355,379 @@ EOF
           <td style="padding: 10px; border: 1px solid #ddd;">{{ drive.size }}</td>
           <td style="padding: 10px; border: 1px solid #ddd;">{{ drive.type }}</td>
           <td style="padding: 10px; border: 1px solid #ddd;">
-            <select name="drive_use_{{ drive.device | replace('/', '_') }}">
-              <option value="">Not Used</option>
-              <option value="media">Media Storage</option>
-              <option value="downloads">Downloads</option>
-              <option value="both">Both Media & Downloads</option>
-            </select>
+            <input type="text" 
+                   name="mount_point_{{ drive.device | replace('/', '_') }}" 
+                   value="{% if drive.device in storage_config.mounts %}{{ storage_config.mounts[drive.device].mount_point }}{% else %}/mnt/{{ drive.device | replace('/dev/', '') }}{% endif %}"
+                   placeholder="/mnt/custom_name">
+          </td>
+          <td style="padding: 10px; border: 1px solid #ddd;">
+            <div class="checkbox-group">
+              <div>
+                <input type="checkbox" 
+                       id="use_movies_{{ drive.device | replace('/', '_') }}" 
+                       name="use_movies_{{ drive.device | replace('/', '_') }}"
+                       {% if drive.device in storage_config.mounts and 'movies' in storage_config.mounts[drive.device].uses %}checked{% endif %}>
+                <label for="use_movies_{{ drive.device | replace('/', '_') }}">Movies</label>
+              </div>
+              
+              <div>
+                <input type="checkbox" 
+                       id="use_tvshows_{{ drive.device | replace('/', '_') }}" 
+                       name="use_tvshows_{{ drive.device | replace('/', '_') }}"
+                       {% if drive.device in storage_config.mounts and 'tvshows' in storage_config.mounts[drive.device].uses %}checked{% endif %}>
+                <label for="use_tvshows_{{ drive.device | replace('/', '_') }}">TV Shows</label>
+              </div>
+              
+              <div>
+                <input type="checkbox" 
+                       id="use_music_{{ drive.device | replace('/', '_') }}" 
+                       name="use_music_{{ drive.device | replace('/', '_') }}"
+                       {% if drive.device in storage_config.mounts and 'music' in storage_config.mounts[drive.device].uses %}checked{% endif %}>
+                <label for="use_music_{{ drive.device | replace('/', '_') }}">Music</label>
+              </div>
+              
+              <div>
+                <input type="checkbox" 
+                       id="use_books_{{ drive.device | replace('/', '_') }}" 
+                       name="use_books_{{ drive.device | replace('/', '_') }}"
+                       {% if drive.device in storage_config.mounts and 'books' in storage_config.mounts[drive.device].uses %}checked{% endif %}>
+                <label for="use_books_{{ drive.device | replace('/', '_') }}">Books/Audiobooks</label>
+              </div>
+              
+              <div>
+                <input type="checkbox" 
+                       id="use_downloads_{{ drive.device | replace('/', '_') }}" 
+                       name="use_downloads_{{ drive.device | replace('/', '_') }}"
+                       {% if drive.device in storage_config.mounts and 'downloads' in storage_config.mounts[drive.device].uses %}checked{% endif %}>
+                <label for="use_downloads_{{ drive.device | replace('/', '_') }}">Downloads</label>
+              </div>
+              
+              <div>
+                <input type="checkbox" 
+                       id="use_custom_{{ drive.device | replace('/', '_') }}" 
+                       name="use_custom_{{ drive.device | replace('/', '_') }}"
+                       {% if drive.device in storage_config.mounts and 'custom' in storage_config.mounts[drive.device].uses %}checked{% endif %}>
+                <label for="use_custom_{{ drive.device | replace('/', '_') }}">Custom</label>
+                {% if drive.device in storage_config.mounts and 'custom' in storage_config.mounts[drive.device].uses %}
+                <input type="text" 
+                       name="custom_name_{{ drive.device | replace('/', '_') }}" 
+                       value="{{ storage_config.mounts[drive.device].custom_name }}"
+                       placeholder="custom_folder_name">
+                {% else %}
+                <input type="text" 
+                       name="custom_name_{{ drive.device | replace('/', '_') }}" 
+                       placeholder="custom_folder_name">
+                {% endif %}
+              </div>
+            </div>
           </td>
         </tr>
         {% endfor %}
       </table>
+    </div>
+    
+    <!-- Network Shares -->
+    <div class="storage-section">
+      <h3>Network Shares</h3>
+      <p>Add network shares to mount (SMB/CIFS or NFS):</p>
+      
+      <!-- Existing network shares -->
+      {% if storage_config.network_shares %}
+      <h4>Existing Network Shares:</h4>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr style="background-color: #f2f2f2;">
+          <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Type</th>
+          <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Remote Path</th>
+          <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Mount Point</th>
+          <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Options</th>
+          <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Use For</th>
+          <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Actions</th>
+        </tr>
+        {% for i, share in storage_config.network_shares.items() %}
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd;">{{ share.type }}</td>
+          <td style="padding: 10px; border: 1px solid #ddd;">{{ share.remote_path }}</td>
+          <td style="padding: 10px; border: 1px solid #ddd;">
+            <input type="text" name="net_mount_point_{{ i }}" value="{{ share.mount_point }}">
+          </td>
+          <td style="padding: 10px; border: 1px solid #ddd;">
+            <input type="text" name="net_options_{{ i }}" value="{{ share.options }}">
+          </td>
+          <td style="padding: 10px; border: 1px solid #ddd;">
+            <div class="checkbox-group">
+              <div>
+                <input type="checkbox" 
+                       id="net_use_movies_{{ i }}" 
+                       name="net_use_movies_{{ i }}"
+                       {% if 'movies' in share.uses %}checked{% endif %}>
+                <label for="net_use_movies_{{ i }}">Movies</label>
+              </div>
+              
+              <div>
+                <input type="checkbox" 
+                       id="net_use_tvshows_{{ i }}" 
+                       name="net_use_tvshows_{{ i }}"
+                       {% if 'tvshows' in share.uses %}checked{% endif %}>
+                <label for="net_use_tvshows_{{ i }}">TV Shows</label>
+              </div>
+              
+              <div>
+                <input type="checkbox" 
+                       id="net_use_music_{{ i }}" 
+                       name="net_use_music_{{ i }}"
+                       {% if 'music' in share.uses %}checked{% endif %}>
+                <label for="net_use_music_{{ i }}">Music</label>
+              </div>
+              
+              <div>
+                <input type="checkbox" 
+                       id="net_use_books_{{ i }}" 
+                       name="net_use_books_{{ i }}"
+                       {% if 'books' in share.uses %}checked{% endif %}>
+                <label for="net_use_books_{{ i }}">Books/Audiobooks</label>
+              </div>
+              
+              <div>
+                <input type="checkbox" 
+                       id="net_use_downloads_{{ i }}" 
+                       name="net_use_downloads_{{ i }}"
+                       {% if 'downloads' in share.uses %}checked{% endif %}>
+                <label for="net_use_downloads_{{ i }}">Downloads</label>
+              </div>
+              
+              <div>
+                <input type="checkbox" 
+                       id="net_use_custom_{{ i }}" 
+                       name="net_use_custom_{{ i }}"
+                       {% if 'custom' in share.uses %}checked{% endif %}>
+                <label for="net_use_custom_{{ i }}">Custom</label>
+                {% if 'custom' in share.uses %}
+                <input type="text" 
+                       name="net_custom_name_{{ i }}" 
+                       value="{{ share.custom_name }}"
+                       placeholder="custom_folder_name">
+                {% else %}
+                <input type="text" 
+                       name="net_custom_name_{{ i }}" 
+                       placeholder="custom_folder_name">
+                {% endif %}
+              </div>
+            </div>
+          </td>
+          <td style="padding: 10px; border: 1px solid #ddd;">
+            <input type="checkbox" id="net_remove_{{ i }}" name="net_remove_{{ i }}">
+            <label for="net_remove_{{ i }}">Remove</label>
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+      
+      <!-- Add New Network Share -->
+      <h4>Add New Network Share:</h4>
+      <div class="form-group">
+        <div>
+          <label for="new_net_type">Type:</label>
+          <select id="new_net_type" name="new_net_type">
+            <option value="cifs">SMB/CIFS (Windows Share)</option>
+            <option value="nfs">NFS (Network File System)</option>
+          </select>
+        </div>
+        
+        <div>
+          <label for="new_net_remote_path">Remote Path:</label>
+          <input type="text" id="new_net_remote_path" name="new_net_remote_path" 
+                 placeholder="//server/share or server:/path/to/share">
+        </div>
+        
+        <div>
+          <label for="new_net_mount_point">Mount Point:</label>
+          <input type="text" id="new_net_mount_point" name="new_net_mount_point" 
+                 placeholder="/mnt/network_share">
+        </div>
+        
+        <div>
+          <label for="new_net_options">Mount Options:</label>
+          <input type="text" id="new_net_options" name="new_net_options" 
+                 placeholder="username=user,password=pass,uid=1000,gid=1000">
+          <div class="service-description">
+            For CIFS: username=user,password=pass,uid=1000,gid=1000<br>
+            For NFS: defaults
+          </div>
+        </div>
+        
+        <div>
+          <h5>Use For:</h5>
+          <div class="checkbox-group">
+            <div>
+              <input type="checkbox" id="new_net_use_movies" name="new_net_use_movies">
+              <label for="new_net_use_movies">Movies</label>
+            </div>
+            
+            <div>
+              <input type="checkbox" id="new_net_use_tvshows" name="new_net_use_tvshows">
+              <label for="new_net_use_tvshows">TV Shows</label>
+            </div>
+            
+            <div>
+              <input type="checkbox" id="new_net_use_music" name="new_net_use_music">
+              <label for="new_net_use_music">Music</label>
+            </div>
+            
+            <div>
+              <input type="checkbox" id="new_net_use_books" name="new_net_use_books">
+              <label for="new_net_use_books">Books/Audiobooks</label>
+            </div>
+            
+            <div>
+              <input type="checkbox" id="new_net_use_downloads" name="new_net_use_downloads">
+              <label for="new_net_use_downloads">Downloads</label>
+            </div>
+            
+            <div>
+              <input type="checkbox" id="new_net_use_custom" name="new_net_use_custom">
+              <label for="new_net_use_custom">Custom</label>
+              <input type="text" name="new_net_custom_name" placeholder="custom_folder_name">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Local Folder Paths -->
+    <div class="storage-section">
+      <h3>Local Folder Paths</h3>
+      <p>Add local folders to use for your media:</p>
+      
+      <!-- Existing local paths -->
+      {% if storage_config.local_paths %}
+      <h4>Existing Local Paths:</h4>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr style="background-color: #f2f2f2;">
+          <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Path</th>
+          <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Use For</th>
+          <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Actions</th>
+        </tr>
+        {% for i, path in storage_config.local_paths.items() %}
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd;">
+            <input type="text" name="local_path_{{ i }}" value="{{ path.path }}">
+          </td>
+          <td style="padding: 10px; border: 1px solid #ddd;">
+            <div class="checkbox-group">
+              <div>
+                <input type="checkbox" 
+                       id="local_use_movies_{{ i }}" 
+                       name="local_use_movies_{{ i }}"
+                       {% if 'movies' in path.uses %}checked{% endif %}>
+                <label for="local_use_movies_{{ i }}">Movies</label>
+              </div>
+              
+              <div>
+                <input type="checkbox" 
+                       id="local_use_tvshows_{{ i }}" 
+                       name="local_use_tvshows_{{ i }}"
+                       {% if 'tvshows' in path.uses %}checked{% endif %}>
+                <label for="local_use_tvshows_{{ i }}">TV Shows</label>
+              </div>
+              
+              <div>
+                <input type="checkbox" 
+                       id="local_use_music_{{ i }}" 
+                       name="local_use_music_{{ i }}"
+                       {% if 'music' in path.uses %}checked{% endif %}>
+                <label for="local_use_music_{{ i }}">Music</label>
+              </div>
+              
+              <div>
+                <input type="checkbox" 
+                       id="local_use_books_{{ i }}" 
+                       name="local_use_books_{{ i }}"
+                       {% if 'books' in path.uses %}checked{% endif %}>
+                <label for="local_use_books_{{ i }}">Books/Audiobooks</label>
+              </div>
+              
+              <div>
+                <input type="checkbox" 
+                       id="local_use_downloads_{{ i }}" 
+                       name="local_use_downloads_{{ i }}"
+                       {% if 'downloads' in path.uses %}checked{% endif %}>
+                <label for="local_use_downloads_{{ i }}">Downloads</label>
+              </div>
+              
+              <div>
+                <input type="checkbox" 
+                       id="local_use_custom_{{ i }}" 
+                       name="local_use_custom_{{ i }}"
+                       {% if 'custom' in path.uses %}checked{% endif %}>
+                <label for="local_use_custom_{{ i }}">Custom</label>
+                {% if 'custom' in path.uses %}
+                <input type="text" 
+                       name="local_custom_name_{{ i }}" 
+                       value="{{ path.custom_name }}"
+                       placeholder="custom_folder_name">
+                {% else %}
+                <input type="text" 
+                       name="local_custom_name_{{ i }}" 
+                       placeholder="custom_folder_name">
+                {% endif %}
+              </div>
+            </div>
+          </td>
+          <td style="padding: 10px; border: 1px solid #ddd;">
+            <input type="checkbox" id="local_remove_{{ i }}" name="local_remove_{{ i }}">
+            <label for="local_remove_{{ i }}">Remove</label>
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+      
+      <!-- Add New Local Path -->
+      <h4>Add New Local Path:</h4>
+      <div class="form-group">
+        <div>
+          <label for="new_local_path">Path:</label>
+          <input type="text" id="new_local_path" name="new_local_path" 
+                 placeholder="/path/to/folder">
+        </div>
+        
+        <div>
+          <h5>Use For:</h5>
+          <div class="checkbox-group">
+            <div>
+              <input type="checkbox" id="new_local_use_movies" name="new_local_use_movies">
+              <label for="new_local_use_movies">Movies</label>
+            </div>
+            
+            <div>
+              <input type="checkbox" id="new_local_use_tvshows" name="new_local_use_tvshows">
+              <label for="new_local_use_tvshows">TV Shows</label>
+            </div>
+            
+            <div>
+              <input type="checkbox" id="new_local_use_music" name="new_local_use_music">
+              <label for="new_local_use_music">Music</label>
+            </div>
+            
+            <div>
+              <input type="checkbox" id="new_local_use_books" name="new_local_use_books">
+              <label for="new_local_use_books">Books/Audiobooks</label>
+            </div>
+            
+            <div>
+              <input type="checkbox" id="new_local_use_downloads" name="new_local_use_downloads">
+              <label for="new_local_use_downloads">Downloads</label>
+            </div>
+            
+            <div>
+              <input type="checkbox" id="new_local_use_custom" name="new_local_use_custom">
+              <label for="new_local_use_custom">Custom</label>
+              <input type="text" name="new_local_custom_name" placeholder="custom_folder_name">
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     
     <div>
@@ -413,8 +780,178 @@ EOF
 {% endblock %}
 EOF
 
-  # Create Services setup page
-  cat > "$INSTALLER_DIR/templates/services_setup.html" <<'EOF'
+  # Create Services selection page
+  cat > "$INSTALLER_DIR/templates/services_selection.html" <<'EOF'
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="step current">
+  <h2>Services Selection</h2>
+  
+  <div class="progress-container">
+    <div class="progress-bar" style="width: 55%">55%</div>
+  </div>
+  
+  <p>Select which services you want to include in your media stack.</p>
+  
+  <form action="/services-selection-save" method="post">
+    <!-- Arr Applications -->
+    <div class="service-category">
+      <h3>Arr Applications</h3>
+      
+      <div class="service-item">
+        <input type="checkbox" id="service_sonarr" name="service_sonarr" {% if services.arr_apps.sonarr %}checked{% endif %}>
+        <label for="service_sonarr">Sonarr - TV Show Management</label>
+        <div class="service-description">Manages TV shows, finds new episodes, and organizes your library.</div>
+      </div>
+      
+      <div class="service-item">
+        <input type="checkbox" id="service_radarr" name="service_radarr" {% if services.arr_apps.radarr %}checked{% endif %}>
+        <label for="service_radarr">Radarr - Movie Management</label>
+        <div class="service-description">Manages movies, finds new releases, and organizes your library.</div>
+      </div>
+      
+      <div class="service-item">
+        <input type="checkbox" id="service_lidarr" name="service_lidarr" {% if services.arr_apps.lidarr %}checked{% endif %}>
+        <label for="service_lidarr">Lidarr - Music Management</label>
+        <div class="service-description">Manages music artists, albums, and tracks.</div>
+      </div>
+      
+      <div class="service-item">
+        <input type="checkbox" id="service_readarr" name="service_readarr" {% if services.arr_apps.readarr %}checked{% endif %}>
+        <label for="service_readarr">Readarr - Book/Audiobook Management</label>
+        <div class="service-description">Manages books, audiobooks, and authors.</div>
+      </div>
+      
+      <div class="service-item">
+        <input type="checkbox" id="service_prowlarr" name="service_prowlarr" {% if services.arr_apps.prowlarr %}checked{% endif %}>
+        <label for="service_prowlarr">Prowlarr - Indexer Management</label>
+        <div class="service-description">Manages and connects to indexers for all the *Arr applications.</div>
+      </div>
+      
+      <div class="service-item">
+        <input type="checkbox" id="service_bazarr" name="service_bazarr" {% if services.arr_apps.bazarr %}checked{% endif %}>
+        <label for="service_bazarr">Bazarr - Subtitle Management</label>
+        <div class="service-description">Manages and downloads subtitles for movies and TV shows.</div>
+      </div>
+    </div>
+    
+    <!-- Media Servers -->
+    <div class="service-category">
+      <h3>Media Servers</h3>
+      
+      <div class="service-item">
+        <input type="radio" id="service_jellyfin" name="media_server" value="jellyfin" {% if services.media_servers.jellyfin %}checked{% endif %}>
+        <label for="service_jellyfin">Jellyfin - Open Source Media Server</label>
+        <div class="service-description">Free and open source media server with no premium features.</div>
+      </div>
+      
+      <div class="service-item">
+        <input type="radio" id="service_plex" name="media_server" value="plex" {% if services.media_servers.plex %}checked{% endif %}>
+        <label for="service_plex">Plex - Media Server</label>
+        <div class="service-description">Popular media server with free and premium features.</div>
+      </div>
+      
+      <div class="service-item">
+        <input type="radio" id="service_emby" name="media_server" value="emby" {% if services.media_servers.emby %}checked{% endif %}>
+        <label for="service_emby">Emby - Media Server</label>
+        <div class="service-description">Alternative media server with free and premium features.</div>
+      </div>
+    </div>
+    
+    <!-- Download Clients -->
+    <div class="service-category">
+      <h3>Download Clients</h3>
+      
+      <div class="service-category-section">
+        <h4>Torrent Client</h4>
+        <div class="service-item">
+          <input type="radio" id="service_transmission" name="torrent_client" value="transmission" {% if services.download_clients.transmission %}checked{% endif %}>
+          <label for="service_transmission">Transmission - Simple Torrent Client</label>
+          <div class="service-description">Lightweight and easy-to-use torrent client.</div>
+        </div>
+        
+        <div class="service-item">
+          <input type="radio" id="service_qbittorrent" name="torrent_client" value="qbittorrent" {% if services.download_clients.qbittorrent %}checked{% endif %}>
+          <label for="service_qbittorrent">qBittorrent - Advanced Torrent Client</label>
+          <div class="service-description">Feature-rich torrent client with advanced options.</div>
+        </div>
+      </div>
+      
+      <div class="service-category-section">
+        <h4>Usenet Client</h4>
+        <div class="service-item">
+          <input type="radio" id="service_nzbget" name="usenet_client" value="nzbget" {% if services.download_clients.nzbget %}checked{% endif %}>
+          <label for="service_nzbget">NZBGet - Fast Usenet Downloader</label>
+          <div class="service-description">Efficient and lightweight Usenet downloader.</div>
+        </div>
+        
+        <div class="service-item">
+          <input type="radio" id="service_sabnzbd" name="usenet_client" value="sabnzbd" {% if services.download_clients.sabnzbd %}checked{% endif %}>
+          <label for="service_sabnzbd">SABnzbd - User-friendly Usenet Downloader</label>
+          <div class="service-description">User-friendly and feature-rich Usenet downloader.</div>
+        </div>
+      </div>
+      
+      <div class="service-category-section">
+        <h4>Direct Download</h4>
+        <div class="service-item">
+          <input type="checkbox" id="service_jdownloader" name="service_jdownloader" {% if services.download_clients.jdownloader %}checked{% endif %}>
+          <label for="service_jdownloader">JDownloader - Direct Download Manager</label>
+          <div class="service-description">Downloads files from direct download sites, file hosts, and video platforms.</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Utilities -->
+    <div class="service-category">
+      <h3>Utilities</h3>
+      
+      <div class="service-item">
+        <input type="checkbox" id="service_heimdall" name="service_heimdall" {% if services.utilities.heimdall %}checked{% endif %}>
+        <label for="service_heimdall">Heimdall - Application Dashboard</label>
+        <div class="service-description">Creates a dashboard with links to all your services.</div>
+      </div>
+      
+      <div class="service-item">
+        <input type="checkbox" id="service_overseerr" name="service_overseerr" {% if services.utilities.overseerr %}checked{% endif %}>
+        <label for="service_overseerr">Overseerr - Media Requests</label>
+        <div class="service-description">Allows users to request movies and TV shows.</div>
+      </div>
+      
+      <div class="service-item">
+        <input type="checkbox" id="service_tautulli" name="service_tautulli" {% if services.utilities.tautulli %}checked{% endif %}>
+        <label for="service_tautulli">Tautulli - Plex Monitoring</label>
+        <div class="service-description">Monitors Plex Media Server usage and statistics.</div>
+      </div>
+      
+      <div class="service-item">
+        <input type="checkbox" id="service_portainer" name="service_portainer" {% if services.utilities.portainer %}checked{% endif %}>
+        <label for="service_portainer">Portainer - Docker Management</label>
+        <div class="service-description">GUI for managing Docker containers, images, networks, and volumes.</div>
+      </div>
+      
+      <div class="service-item">
+        <input type="checkbox" id="service_nginx_proxy_manager" name="service_nginx_proxy_manager" {% if services.utilities.nginx_proxy_manager %}checked{% endif %}>
+        <label for="service_nginx_proxy_manager">Nginx Proxy Manager</label>
+        <div class="service-description">Expose services to the internet with SSL certificates.</div>
+      </div>
+      
+      <div class="service-item">
+        <input type="checkbox" id="service_get_iplayer" name="service_get_iplayer" {% if services.utilities.get_iplayer %}checked{% endif %}>
+        <label for="service_get_iplayer">Get iPlayer - BBC Content Downloader</label>
+        <div class="service-description">Downloads content from BBC iPlayer.</div>
+      </div>
+    </div>
+    
+    <button type="submit">Save Services Selection</button>
+  </form>
+</div>
+{% endblock %}
+EOF
+
+  # Create Services configuration page
+  cat > "$INSTALLER_DIR/templates/services_config.html" <<'EOF'
 {% extends "layout.html" %}
 
 {% block content %}
@@ -425,57 +962,225 @@ EOF
     <div class="progress-bar" style="width: 60%">60%</div>
   </div>
   
-  <p>Configure ports and settings for your media services.</p>
+  <p>Configure ports and settings for your selected services.</p>
   
-  <form action="/services-save" method="post">
-    <h3>Service Ports:</h3>
-    
-    <div>
-      <label for="jacket_port">Jackett Port:</label>
-      <input type="text" id="jacket_port" name="jacket_port" required value="{{ jacket_port }}">
-    </div>
-    
-    <div>
-      <label for="sonarr_port">Sonarr Port:</label>
-      <input type="text" id="sonarr_port" name="sonarr_port" required value="{{ sonarr_port }}">
-    </div>
-    
-    <div>
-      <label for="radarr_port">Radarr Port:</label>
-      <input type="text" id="radarr_port" name="radarr_port" required value="{{ radarr_port }}">
-    </div>
-    
-    <div>
-      <label for="transmission_port">Transmission Port:</label>
-      <input type="text" id="transmission_port" name="transmission_port" required value="{{ transmission_port }}">
-    </div>
-    
-    <div>
-      <label for="nzbget_port">NZBGet Port:</label>
-      <input type="text" id="nzbget_port" name="nzbget_port" required value="{{ nzbget_port }}">
-    </div>
-    
-    <div>
-      <label for="get_iplayer_port">Get iPlayer Port:</label>
-      <input type="text" id="get_iplayer_port" name="get_iplayer_port" required value="{{ get_iplayer_port }}">
-    </div>
-    
-    <div>
-      <label for="jellyfin_port">Jellyfin HTTP Port:</label>
-      <input type="text" id="jellyfin_port" name="jellyfin_port" required value="{{ jellyfin_port }}">
-    </div>
-    
-    <div>
-      <label for="jellyfin_https_port">Jellyfin HTTPS Port:</label>
-      <input type="text" id="jellyfin_https_port" name="jellyfin_https_port" required value="{{ jellyfin_https_port }}">
-    </div>
-    
-    <h3>Other Settings:</h3>
+  <form action="/services-config-save" method="post">
+    <h3>General Settings:</h3>
     
     <div>
       <label for="timezone">Timezone:</label>
-      <input type="text" id="timezone" name="timezone" required value="{{ timezone }}">
+      <input type="text" id="timezone" name="timezone" required value="{{ config.timezone }}">
     </div>
+    
+    <div>
+      <label for="puid">PUID:</label>
+      <input type="text" id="puid" name="puid" required value="{{ config.puid }}">
+    </div>
+    
+    <div>
+      <label for="pgid">PGID:</label>
+      <input type="text" id="pgid" name="pgid" required value="{{ config.pgid }}">
+    </div>
+    
+    <h3>Network Ports:</h3>
+    
+    <!-- Only show settings for selected services -->
+    {% if 'prowlarr' in enabled_services %}
+    <div class="service-config-item">
+      <h4>Prowlarr</h4>
+      <div>
+        <label for="prowlarr_port">Prowlarr Port:</label>
+        <input type="text" id="prowlarr_port" name="prowlarr_port" value="{{ config.prowlarr_port|default('9696') }}">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if 'sonarr' in enabled_services %}
+    <div class="service-config-item">
+      <h4>Sonarr</h4>
+      <div>
+        <label for="sonarr_port">Sonarr Port:</label>
+        <input type="text" id="sonarr_port" name="sonarr_port" value="{{ config.sonarr_port|default('8989') }}">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if 'radarr' in enabled_services %}
+    <div class="service-config-item">
+      <h4>Radarr</h4>
+      <div>
+        <label for="radarr_port">Radarr Port:</label>
+        <input type="text" id="radarr_port" name="radarr_port" value="{{ config.radarr_port|default('7878') }}">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if 'lidarr' in enabled_services %}
+    <div class="service-config-item">
+      <h4>Lidarr</h4>
+      <div>
+        <label for="lidarr_port">Lidarr Port:</label>
+        <input type="text" id="lidarr_port" name="lidarr_port" value="{{ config.lidarr_port|default('8686') }}">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if 'readarr' in enabled_services %}
+    <div class="service-config-item">
+      <h4>Readarr</h4>
+      <div>
+        <label for="readarr_port">Readarr Port:</label>
+        <input type="text" id="readarr_port" name="readarr_port" value="{{ config.readarr_port|default('8787') }}">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if 'bazarr' in enabled_services %}
+    <div class="service-config-item">
+      <h4>Bazarr</h4>
+      <div>
+        <label for="bazarr_port">Bazarr Port:</label>
+        <input type="text" id="bazarr_port" name="bazarr_port" value="{{ config.bazarr_port|default('6767') }}">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if 'jellyfin' in enabled_services %}
+    <div class="service-config-item">
+      <h4>Jellyfin</h4>
+      <div>
+        <label for="jellyfin_port">Jellyfin HTTP Port:</label>
+        <input type="text" id="jellyfin_port" name="jellyfin_port" value="{{ config.jellyfin_port|default('8096') }}">
+      </div>
+      <div>
+        <label for="jellyfin_https_port">Jellyfin HTTPS Port:</label>
+        <input type="text" id="jellyfin_https_port" name="jellyfin_https_port" value="{{ config.jellyfin_https_port|default('8920') }}">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if 'plex' in enabled_services %}
+    <div class="service-config-item">
+      <h4>Plex</h4>
+      <div>
+        <label for="plex_claim">Plex Claim Token (optional):</label>
+        <input type="text" id="plex_claim" name="plex_claim" value="{{ config.plex_claim|default('') }}">
+        <div class="service-description">Get a claim token from <a href="https://www.plex.tv/claim/" target="_blank">https://www.plex.tv/claim/</a> (valid for 4 minutes)</div>
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if 'emby' in enabled_services %}
+    <div class="service-config-item">
+      <h4>Emby</h4>
+      <div>
+        <label for="emby_port">Emby HTTP Port:</label>
+        <input type="text" id="emby_port" name="emby_port" value="{{ config.emby_port|default('8096') }}">
+      </div>
+      <div>
+        <label for="emby_https_port">Emby HTTPS Port:</label>
+        <input type="text" id="emby_https_port" name="emby_https_port" value="{{ config.emby_https_port|default('8920') }}">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if 'transmission' in enabled_services %}
+    <div class="service-config-item">
+      <h4>Transmission</h4>
+      <div>
+        <label for="transmission_port">Transmission Port:</label>
+        <input type="text" id="transmission_port" name="transmission_port" value="{{ config.transmission_port|default('9091') }}">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if 'qbittorrent' in enabled_services %}
+    <div class="service-config-item">
+      <h4>qBittorrent</h4>
+      <div>
+        <label for="qbittorrent_port">qBittorrent WebUI Port:</label>
+        <input type="text" id="qbittorrent_port" name="qbittorrent_port" value="{{ config.qbittorrent_port|default('8080') }}">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if 'nzbget' in enabled_services %}
+    <div class="service-config-item">
+      <h4>NZBGet</h4>
+      <div>
+        <label for="nzbget_port">NZBGet Port:</label>
+        <input type="text" id="nzbget_port" name="nzbget_port" value="{{ config.nzbget_port|default('6789') }}">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if 'sabnzbd' in enabled_services %}
+    <div class="service-config-item">
+      <h4>SABnzbd</h4>
+      <div>
+        <label for="sabnzbd_port">SABnzbd Port:</label>
+        <input type="text" id="sabnzbd_port" name="sabnzbd_port" value="{{ config.sabnzbd_port|default('8080') }}">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if 'get_iplayer' in enabled_services %}
+    <div class="service-config-item">
+      <h4>Get iPlayer</h4>
+      <div>
+        <label for="get_iplayer_port">Get iPlayer Port:</label>
+        <input type="text" id="get_iplayer_port" name="get_iplayer_port" value="{{ config.get_iplayer_port|default('1935') }}">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if 'heimdall' in enabled_services %}
+    <div class="service-config-item">
+      <h4>Heimdall</h4>
+      <div>
+        <label for="heimdall_port">Heimdall HTTP Port:</label>
+        <input type="text" id="heimdall_port" name="heimdall_port" value="{{ config.heimdall_port|default('80') }}">
+      </div>
+      <div>
+        <label for="heimdall_https_port">Heimdall HTTPS Port:</label>
+        <input type="text" id="heimdall_https_port" name="heimdall_https_port" value="{{ config.heimdall_https_port|default('443') }}">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if 'overseerr' in enabled_services %}
+    <div class="service-config-item">
+      <h4>Overseerr</h4>
+      <div>
+        <label for="overseerr_port">Overseerr Port:</label>
+        <input type="text" id="overseerr_port" name="overseerr_port" value="{{ config.overseerr_port|default('5055') }}">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if 'tautulli' in enabled_services %}
+    <div class="service-config-item">
+      <h4>Tautulli</h4>
+      <div>
+        <label for="tautulli_port">Tautulli Port:</label>
+        <input type="text" id="tautulli_port" name="tautulli_port" value="{{ config.tautulli_port|default('8181') }}">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if 'portainer' in enabled_services %}
+    <div class="service-config-item">
+      <h4>Portainer</h4>
+      <div>
+        <label for="portainer_port">Portainer Port:</label>
+        <input type="text" id="portainer_port" name="portainer_port" value="{{ config.portainer_port|default('9000') }}">
+      </div>
+      <div>
+        <label for="portainer_edge_port">Portainer Edge Port:</label>
+        <input type="text" id="portainer_edge_port" name="portainer_edge_port" value="{{ config.portainer_edge_port|default('8000') }}">
+      </div>
+    </div>
+    {% endif %}
     
     <button type="submit">Save Service Configuration</button>
   </form>
@@ -671,6 +1376,7 @@ import time
 import re
 import threading
 import shutil
+import uuid
 
 app = Flask(__name__)
 
@@ -685,31 +1391,99 @@ INSTALLER_DIR = os.path.join(HOME_DIR, ".pi-pvr-installer")
 INSTALLER_LOG = os.path.join(INSTALLER_DIR, "installer.log")
 BASE_DIR = os.path.dirname(SCRIPT_DIR)
 ORIG_SCRIPT_PATH = os.path.join(BASE_DIR, "pi-pvr.sh")
+SCRIPTS_DIR = os.path.join(BASE_DIR, "scripts")
+GENERATE_COMPOSE_SCRIPT = os.path.join(SCRIPTS_DIR, "generate-compose.sh")
 
 # Global config object
 config = {
+    # System configuration
+    "puid": "1000",
+    "pgid": "1000",
+    "timezone": "Europe/London",
+    
+    # VPN configuration
     "pia_username": "",
     "pia_password": "",
     "server_region": "Netherlands",
+    
+    # Tailscale configuration
     "tailscale_auth_key": "",
-    "share_method": "samba",
+    
+    # Default folders (can be overridden by storage configuration)
     "movies_folder": "Movies",
     "tvshows_folder": "TVShows",
+    "music_folder": "Music",
+    "books_folder": "Books",
     "downloads_folder": "/mnt/storage/downloads",
-    "timezone": "Europe/London",
-    "jacket_port": "9117",
+    
+    # Default ports configuration for all services
+    "prowlarr_port": "9696",
     "sonarr_port": "8989",
     "radarr_port": "7878",
-    "transmission_port": "9091",
-    "nzbget_port": "6789",
-    "get_iplayer_port": "1935",
+    "lidarr_port": "8686",
+    "readarr_port": "8787",
+    "bazarr_port": "6767",
     "jellyfin_port": "8096",
     "jellyfin_https_port": "8920",
-    "storage_drive": "",
-    "download_drive": "",
-    "storage_mount": "/mnt/storage",
-    "download_mount": "/mnt/downloads",
+    "plex_claim": "",
+    "emby_port": "8096",
+    "emby_https_port": "8920",
+    "transmission_port": "9091",
+    "qbittorrent_port": "8080",
+    "nzbget_port": "6789",
+    "sabnzbd_port": "8080",
+    "get_iplayer_port": "1935",
+    "heimdall_port": "80",
+    "heimdall_https_port": "443",
+    "overseerr_port": "5055",
+    "tautulli_port": "8181",
+    "portainer_port": "9000",
+    "portainer_edge_port": "8000",
+    
+    # Default sharing method
+    "share_method": "samba",
+    
+    # Installation status
     "installation_status": "not_started"
+}
+
+# Storage configuration
+storage_config = {
+    "mounts": {},           # USB drive mounts
+    "network_shares": {},   # Network shares
+    "local_paths": {}       # Local folder paths
+}
+
+# Services configuration
+services = {
+    "arr_apps": {
+        "sonarr": True,
+        "radarr": True,
+        "lidarr": False,
+        "readarr": False,
+        "prowlarr": True,
+        "bazarr": False
+    },
+    "media_servers": {
+        "jellyfin": True,
+        "plex": False,
+        "emby": False
+    },
+    "download_clients": {
+        "transmission": True,
+        "qbittorrent": False,
+        "nzbget": True,
+        "sabnzbd": False,
+        "jdownloader": False
+    },
+    "utilities": {
+        "heimdall": False,
+        "overseerr": False,
+        "tautulli": False,
+        "portainer": True,
+        "nginx_proxy_manager": False,
+        "get_iplayer": True
+    }
 }
 
 # Load existing config if available
@@ -726,8 +1500,64 @@ def save_config():
     with open(config_file, "w") as f:
         json.dump(config, f, indent=2)
 
-# Initialize by loading config
+# Load storage configuration
+def load_storage_config():
+    global storage_config
+    storage_file = os.path.join(INSTALLER_DIR, "storage.json")
+    if os.path.exists(storage_file):
+        with open(storage_file, "r") as f:
+            storage_config.update(json.load(f))
+
+# Save storage configuration
+def save_storage_config():
+    storage_file = os.path.join(INSTALLER_DIR, "storage.json")
+    with open(storage_file, "w") as f:
+        json.dump(storage_config, f, indent=2)
+
+# Load services configuration
+def load_services():
+    global services
+    services_file = os.path.join(INSTALLER_DIR, "services.json")
+    if os.path.exists(services_file):
+        with open(services_file, "r") as f:
+            services.update(json.load(f))
+
+# Save services configuration
+def save_services():
+    services_file = os.path.join(INSTALLER_DIR, "services.json")
+    with open(services_file, "w") as f:
+        json.dump(services, f, indent=2)
+
+# Get a list of all enabled services
+def get_enabled_services():
+    enabled = []
+    
+    # Add Arr applications
+    for service, enabled_val in services["arr_apps"].items():
+        if enabled_val:
+            enabled.append(service)
+    
+    # Add media server
+    for service, enabled_val in services["media_servers"].items():
+        if enabled_val:
+            enabled.append(service)
+    
+    # Add download clients
+    for service, enabled_val in services["download_clients"].items():
+        if enabled_val:
+            enabled.append(service)
+    
+    # Add utilities
+    for service, enabled_val in services["utilities"].items():
+        if enabled_val:
+            enabled.append(service)
+    
+    return enabled
+
+# Initialize by loading all configurations
 load_config()
+load_storage_config()
+load_services()
 
 # Welcome page
 @app.route('/')
@@ -783,28 +1613,256 @@ def storage_setup():
     drives = get_available_drives()
     return render_template('storage_setup.html', 
                           drives=drives, 
-                          share_method=config["share_method"])
+                          share_method=config["share_method"],
+                          storage_config=storage_config)
 
 # Save Storage config
 @app.route('/storage-save', methods=['POST'])
 def storage_save():
+    # Update sharing method
     config["share_method"] = request.form.get("share_method", "samba")
     
+    # Process USB drives
     drives = get_available_drives()
+    
+    # Reset the mounts to rebuild them from form data
+    new_mounts = {}
+    
+    # Process each drive
     for drive in drives:
         drive_key = drive["device"].replace("/", "_")
-        drive_use = request.form.get(f"drive_use_{drive_key}", "")
         
-        if drive_use == "media":
-            config["storage_drive"] = drive["device"]
-        elif drive_use == "downloads":
-            config["download_drive"] = drive["device"]
-        elif drive_use == "both":
-            config["storage_drive"] = drive["device"]
-            config["download_drive"] = drive["device"]
+        # Check if any uses are selected
+        uses = []
+        if f"use_movies_{drive_key}" in request.form:
+            uses.append("movies")
+        if f"use_tvshows_{drive_key}" in request.form:
+            uses.append("tvshows")
+        if f"use_music_{drive_key}" in request.form:
+            uses.append("music")
+        if f"use_books_{drive_key}" in request.form:
+            uses.append("books")
+        if f"use_downloads_{drive_key}" in request.form:
+            uses.append("downloads")
+        if f"use_custom_{drive_key}" in request.form:
+            uses.append("custom")
+            
+        # Only process drives with at least one use
+        if uses:
+            mount_point = request.form.get(f"mount_point_{drive_key}", f"/mnt/{drive['device'].replace('/dev/', '')}")
+            
+            # Store the drive mount config
+            new_mounts[drive["device"]] = {
+                "mount_point": mount_point,
+                "uses": uses
+            }
+            
+            # Add custom name if applicable
+            if "custom" in uses:
+                custom_name = request.form.get(f"custom_name_{drive_key}", "custom")
+                new_mounts[drive["device"]]["custom_name"] = custom_name
     
+    # Update the storage config with new mounts
+    storage_config["mounts"] = new_mounts
+    
+    # Process network shares
+    new_network_shares = {}
+    
+    # Process existing network shares
+    if "network_shares" in storage_config:
+        for i, share in storage_config["network_shares"].items():
+            # Check if this share is marked for removal
+            if f"net_remove_{i}" in request.form:
+                continue
+                
+            # Update the share configuration
+            mount_point = request.form.get(f"net_mount_point_{i}", share["mount_point"])
+            options = request.form.get(f"net_options_{i}", share["options"])
+            
+            # Collect uses
+            uses = []
+            if f"net_use_movies_{i}" in request.form:
+                uses.append("movies")
+            if f"net_use_tvshows_{i}" in request.form:
+                uses.append("tvshows")
+            if f"net_use_music_{i}" in request.form:
+                uses.append("music")
+            if f"net_use_books_{i}" in request.form:
+                uses.append("books")
+            if f"net_use_downloads_{i}" in request.form:
+                uses.append("downloads")
+            if f"net_use_custom_{i}" in request.form:
+                uses.append("custom")
+            
+            # Only keep share if it has uses
+            if uses:
+                new_network_shares[i] = {
+                    "type": share["type"],
+                    "remote_path": share["remote_path"],
+                    "mount_point": mount_point,
+                    "options": options,
+                    "uses": uses
+                }
+                
+                # Add custom name if applicable
+                if "custom" in uses:
+                    custom_name = request.form.get(f"net_custom_name_{i}", "custom")
+                    new_network_shares[i]["custom_name"] = custom_name
+    
+    # Process new network share if provided
+    if request.form.get("new_net_remote_path") and request.form.get("new_net_mount_point"):
+        # Generate a new unique ID
+        new_id = str(uuid.uuid4())
+        
+        # Collect uses
+        uses = []
+        if "new_net_use_movies" in request.form:
+            uses.append("movies")
+        if "new_net_use_tvshows" in request.form:
+            uses.append("tvshows")
+        if "new_net_use_music" in request.form:
+            uses.append("music")
+        if "new_net_use_books" in request.form:
+            uses.append("books")
+        if "new_net_use_downloads" in request.form:
+            uses.append("downloads")
+        if "new_net_use_custom" in request.form:
+            uses.append("custom")
+        
+        # Add new share if it has uses
+        if uses:
+            new_network_shares[new_id] = {
+                "type": request.form.get("new_net_type", "cifs"),
+                "remote_path": request.form.get("new_net_remote_path"),
+                "mount_point": request.form.get("new_net_mount_point"),
+                "options": request.form.get("new_net_options", ""),
+                "uses": uses
+            }
+            
+            # Add custom name if applicable
+            if "custom" in uses:
+                custom_name = request.form.get("new_net_custom_name", "custom")
+                new_network_shares[new_id]["custom_name"] = custom_name
+    
+    # Update network shares
+    storage_config["network_shares"] = new_network_shares
+    
+    # Process local paths
+    new_local_paths = {}
+    
+    # Process existing local paths
+    if "local_paths" in storage_config:
+        for i, path_info in storage_config["local_paths"].items():
+            # Check if this path is marked for removal
+            if f"local_remove_{i}" in request.form:
+                continue
+                
+            # Update the path
+            path = request.form.get(f"local_path_{i}", path_info["path"])
+            
+            # Collect uses
+            uses = []
+            if f"local_use_movies_{i}" in request.form:
+                uses.append("movies")
+            if f"local_use_tvshows_{i}" in request.form:
+                uses.append("tvshows")
+            if f"local_use_music_{i}" in request.form:
+                uses.append("music")
+            if f"local_use_books_{i}" in request.form:
+                uses.append("books")
+            if f"local_use_downloads_{i}" in request.form:
+                uses.append("downloads")
+            if f"local_use_custom_{i}" in request.form:
+                uses.append("custom")
+            
+            # Only keep path if it has uses
+            if uses:
+                new_local_paths[i] = {
+                    "path": path,
+                    "uses": uses
+                }
+                
+                # Add custom name if applicable
+                if "custom" in uses:
+                    custom_name = request.form.get(f"local_custom_name_{i}", "custom")
+                    new_local_paths[i]["custom_name"] = custom_name
+    
+    # Process new local path if provided
+    if request.form.get("new_local_path"):
+        # Generate a new unique ID
+        new_id = str(uuid.uuid4())
+        
+        # Collect uses
+        uses = []
+        if "new_local_use_movies" in request.form:
+            uses.append("movies")
+        if "new_local_use_tvshows" in request.form:
+            uses.append("tvshows")
+        if "new_local_use_music" in request.form:
+            uses.append("music")
+        if "new_local_use_books" in request.form:
+            uses.append("books")
+        if "new_local_use_downloads" in request.form:
+            uses.append("downloads")
+        if "new_local_use_custom" in request.form:
+            uses.append("custom")
+        
+        # Add new path if it has uses
+        if uses:
+            new_local_paths[new_id] = {
+                "path": request.form.get("new_local_path"),
+                "uses": uses
+            }
+            
+            # Add custom name if applicable
+            if "custom" in uses:
+                custom_name = request.form.get("new_local_custom_name", "custom")
+                new_local_paths[new_id]["custom_name"] = custom_name
+    
+    # Update local paths
+    storage_config["local_paths"] = new_local_paths
+    
+    # Save the storage configuration
+    save_storage_config()
+    
+    # Update config with primary storage locations based on the first available options
+    # This allows us to override default media directories
+    
+    # Look for movie storage
+    for device_info in storage_config["mounts"].values():
+        if "movies" in device_info["uses"]:
+            config["movies_folder"] = os.path.join(device_info["mount_point"], "Movies")
+            break
+    
+    # Look for TV show storage
+    for device_info in storage_config["mounts"].values():
+        if "tvshows" in device_info["uses"]:
+            config["tvshows_folder"] = os.path.join(device_info["mount_point"], "TVShows")
+            break
+    
+    # Look for music storage
+    for device_info in storage_config["mounts"].values():
+        if "music" in device_info["uses"]:
+            config["music_folder"] = os.path.join(device_info["mount_point"], "Music")
+            break
+    
+    # Look for book storage
+    for device_info in storage_config["mounts"].values():
+        if "books" in device_info["uses"]:
+            config["books_folder"] = os.path.join(device_info["mount_point"], "Books")
+            break
+    
+    # Look for download storage
+    for device_info in storage_config["mounts"].values():
+        if "downloads" in device_info["uses"]:
+            config["downloads_folder"] = os.path.join(device_info["mount_point"], "downloads")
+            break
+    
+    # Save the updated config
     save_config()
-    return redirect(url_for('media_setup'))
+    
+    # Redirect to services selection
+    return redirect(url_for('services_selection'))
 
 # Media setup page
 @app.route('/media-setup')
@@ -850,6 +1908,140 @@ def services_save():
     config["jellyfin_https_port"] = request.form.get("jellyfin_https_port", "8920")
     config["timezone"] = request.form.get("timezone", "Europe/London")
     save_config()
+    return redirect(url_for('installation'))
+
+# Services Selection Page
+@app.route('/services-selection')
+def services_selection():
+    return render_template('services_selection.html', services=services)
+
+# Save Services Selection
+@app.route('/services-selection-save', methods=['POST'])
+def services_selection_save():
+    global services
+    
+    # Process Arr applications
+    services["arr_apps"]["sonarr"] = "service_sonarr" in request.form
+    services["arr_apps"]["radarr"] = "service_radarr" in request.form
+    services["arr_apps"]["lidarr"] = "service_lidarr" in request.form
+    services["arr_apps"]["readarr"] = "service_readarr" in request.form
+    services["arr_apps"]["prowlarr"] = "service_prowlarr" in request.form
+    services["arr_apps"]["bazarr"] = "service_bazarr" in request.form
+    
+    # Process Media Server (radio buttons - only one can be selected)
+    media_server = request.form.get("media_server", "jellyfin")
+    services["media_servers"]["jellyfin"] = media_server == "jellyfin"
+    services["media_servers"]["plex"] = media_server == "plex"
+    services["media_servers"]["emby"] = media_server == "emby"
+    
+    # Process Download Clients
+    torrent_client = request.form.get("torrent_client", "transmission")
+    services["download_clients"]["transmission"] = torrent_client == "transmission"
+    services["download_clients"]["qbittorrent"] = torrent_client == "qbittorrent"
+    
+    usenet_client = request.form.get("usenet_client", "nzbget")
+    services["download_clients"]["nzbget"] = usenet_client == "nzbget"
+    services["download_clients"]["sabnzbd"] = usenet_client == "sabnzbd"
+    
+    services["download_clients"]["jdownloader"] = "service_jdownloader" in request.form
+    
+    # Process Utilities
+    services["utilities"]["heimdall"] = "service_heimdall" in request.form
+    services["utilities"]["overseerr"] = "service_overseerr" in request.form
+    services["utilities"]["tautulli"] = "service_tautulli" in request.form
+    services["utilities"]["portainer"] = "service_portainer" in request.form
+    services["utilities"]["nginx_proxy_manager"] = "service_nginx_proxy_manager" in request.form
+    services["utilities"]["get_iplayer"] = "service_get_iplayer" in request.form
+    
+    # Save to services file
+    save_services()
+    
+    # Generate list of enabled services for the services configuration page
+    enabled_services = get_enabled_services()
+    
+    # Redirect to services configuration page
+    return redirect(url_for('services_config'))
+
+# Services Configuration Page
+@app.route('/services-config')
+def services_config():
+    enabled_services = get_enabled_services()
+    return render_template('services_config.html', config=config, enabled_services=enabled_services)
+
+# Save Services Configuration
+@app.route('/services-config-save', methods=['POST'])
+def services_config_save():
+    # Update general settings
+    config["timezone"] = request.form.get("timezone", "Europe/London")
+    config["puid"] = request.form.get("puid", "1000")
+    config["pgid"] = request.form.get("pgid", "1000")
+    
+    # Get all enabled services
+    enabled_services = get_enabled_services()
+    
+    # Process port configurations for each enabled service
+    if 'prowlarr' in enabled_services:
+        config["prowlarr_port"] = request.form.get("prowlarr_port", "9696")
+    
+    if 'sonarr' in enabled_services:
+        config["sonarr_port"] = request.form.get("sonarr_port", "8989")
+    
+    if 'radarr' in enabled_services:
+        config["radarr_port"] = request.form.get("radarr_port", "7878")
+    
+    if 'lidarr' in enabled_services:
+        config["lidarr_port"] = request.form.get("lidarr_port", "8686")
+    
+    if 'readarr' in enabled_services:
+        config["readarr_port"] = request.form.get("readarr_port", "8787")
+    
+    if 'bazarr' in enabled_services:
+        config["bazarr_port"] = request.form.get("bazarr_port", "6767")
+    
+    if 'jellyfin' in enabled_services:
+        config["jellyfin_port"] = request.form.get("jellyfin_port", "8096")
+        config["jellyfin_https_port"] = request.form.get("jellyfin_https_port", "8920")
+    
+    if 'plex' in enabled_services:
+        config["plex_claim"] = request.form.get("plex_claim", "")
+    
+    if 'emby' in enabled_services:
+        config["emby_port"] = request.form.get("emby_port", "8096")
+        config["emby_https_port"] = request.form.get("emby_https_port", "8920")
+    
+    if 'transmission' in enabled_services:
+        config["transmission_port"] = request.form.get("transmission_port", "9091")
+    
+    if 'qbittorrent' in enabled_services:
+        config["qbittorrent_port"] = request.form.get("qbittorrent_port", "8080")
+    
+    if 'nzbget' in enabled_services:
+        config["nzbget_port"] = request.form.get("nzbget_port", "6789")
+    
+    if 'sabnzbd' in enabled_services:
+        config["sabnzbd_port"] = request.form.get("sabnzbd_port", "8080")
+    
+    if 'get_iplayer' in enabled_services:
+        config["get_iplayer_port"] = request.form.get("get_iplayer_port", "1935")
+    
+    if 'heimdall' in enabled_services:
+        config["heimdall_port"] = request.form.get("heimdall_port", "80")
+        config["heimdall_https_port"] = request.form.get("heimdall_https_port", "443")
+    
+    if 'overseerr' in enabled_services:
+        config["overseerr_port"] = request.form.get("overseerr_port", "5055")
+    
+    if 'tautulli' in enabled_services:
+        config["tautulli_port"] = request.form.get("tautulli_port", "8181")
+    
+    if 'portainer' in enabled_services:
+        config["portainer_port"] = request.form.get("portainer_port", "9000")
+        config["portainer_edge_port"] = request.form.get("portainer_edge_port", "8000")
+    
+    # Save configuration
+    save_config()
+    
+    # Redirect to installation page
     return redirect(url_for('installation'))
 
 # Installation page
@@ -1030,28 +2222,272 @@ def get_services_status():
     
     return services
 
+def setup_storage():
+    """Set up all storage options including USB drives, network shares, and local paths"""
+    with open(INSTALLER_LOG, "a") as log:
+        log.write("Setting up storage configuration...\n")
+    
+    # Process USB drive mounts
+    if storage_config.get("mounts"):
+        with open(INSTALLER_LOG, "a") as log:
+            log.write(f"Setting up {len(storage_config['mounts'])} USB drive(s)...\n")
+            
+        for mount_point, mount_info in storage_config["mounts"].items():
+            device = mount_info.get("device")
+            fs_type = mount_info.get("fs_type", "auto")
+            mount_options = mount_info.get("options", "defaults")
+            
+            if not device:
+                continue
+                
+            # Create mount point directory if it doesn't exist
+            if not os.path.exists(mount_point):
+                try:
+                    os.makedirs(mount_point, exist_ok=True)
+                    # Set permissions to allow containers to access files
+                    os.chmod(mount_point, 0o755)
+                    log.write(f"Created mount point directory: {mount_point}\n")
+                except Exception as e:
+                    log.write(f"Failed to create mount point {mount_point}: {str(e)}\n")
+                    continue
+            
+            # Add entry to fstab if not already present
+            fstab_line = f"{device} {mount_point} {fs_type} {mount_options} 0 0"
+            try:
+                # Check if entry already exists in fstab
+                with open("/etc/fstab", "r") as fstab:
+                    if any(line.strip() == fstab_line for line in fstab if not line.startswith("#")):
+                        log.write(f"Mount entry for {device} already exists in fstab\n")
+                        continue
+                        
+                # Add entry to fstab
+                with open("/etc/fstab", "a") as fstab:
+                    fstab.write(f"\n{fstab_line}\n")
+                    log.write(f"Added {device} to fstab\n")
+                    
+                # Mount the drive
+                subprocess.run(["mount", mount_point], check=True)
+                log.write(f"Mounted {device} at {mount_point}\n")
+            except Exception as e:
+                log.write(f"Failed to configure mount for {device}: {str(e)}\n")
+    
+    # Process network shares
+    if storage_config.get("network_shares"):
+        with open(INSTALLER_LOG, "a") as log:
+            log.write(f"Setting up {len(storage_config['network_shares'])} network share(s)...\n")
+            
+        for mount_point, share_info in storage_config["network_shares"].items():
+            share_type = share_info.get("type", "cifs")
+            share_path = share_info.get("path")
+            share_options = share_info.get("options", "")
+            
+            if not share_path:
+                continue
+                
+            # Create mount point directory if it doesn't exist
+            if not os.path.exists(mount_point):
+                try:
+                    os.makedirs(mount_point, exist_ok=True)
+                    # Set permissions
+                    os.chmod(mount_point, 0o755)
+                    log.write(f"Created network share mount point: {mount_point}\n")
+                except Exception as e:
+                    log.write(f"Failed to create network share mount point {mount_point}: {str(e)}\n")
+                    continue
+            
+            # Handle CIFS/SMB shares
+            if share_type == "cifs":
+                # Ensure cifs-utils is installed
+                try:
+                    subprocess.run(["apt-get", "install", "-y", "cifs-utils"], check=True)
+                except Exception as e:
+                    log.write(f"Failed to install cifs-utils: {str(e)}\n")
+                    continue
+                
+                # Create credentials file if username/password provided
+                if "username" in share_info and "password" in share_info:
+                    creds_file = f"/root/.smbcredentials-{os.path.basename(mount_point)}"
+                    try:
+                        with open(creds_file, "w") as creds:
+                            creds.write(f"username={share_info['username']}\n")
+                            creds.write(f"password={share_info['password']}\n")
+                        os.chmod(creds_file, 0o600)
+                        share_options += f",credentials={creds_file}"
+                        log.write(f"Created SMB credentials file {creds_file}\n")
+                    except Exception as e:
+                        log.write(f"Failed to create SMB credentials file: {str(e)}\n")
+                
+                # Add entry to fstab if not already present
+                fstab_line = f"{share_path} {mount_point} {share_type} {share_options} 0 0"
+            
+            # Handle NFS shares
+            elif share_type == "nfs":
+                # Ensure nfs-common is installed
+                try:
+                    subprocess.run(["apt-get", "install", "-y", "nfs-common"], check=True)
+                except Exception as e:
+                    log.write(f"Failed to install nfs-common: {str(e)}\n")
+                    continue
+                
+                # Add entry to fstab if not already present
+                fstab_line = f"{share_path} {mount_point} {share_type} {share_options} 0 0"
+            
+            # Add to fstab and mount
+            try:
+                # Check if entry already exists in fstab
+                with open("/etc/fstab", "r") as fstab:
+                    if any(line.strip() == fstab_line for line in fstab if not line.startswith("#")):
+                        log.write(f"Mount entry for {share_path} already exists in fstab\n")
+                        continue
+                        
+                # Add entry to fstab
+                with open("/etc/fstab", "a") as fstab:
+                    fstab.write(f"\n{fstab_line}\n")
+                    log.write(f"Added {share_path} to fstab\n")
+                    
+                # Mount the share
+                subprocess.run(["mount", mount_point], check=True)
+                log.write(f"Mounted {share_path} at {mount_point}\n")
+            except Exception as e:
+                log.write(f"Failed to configure mount for {share_path}: {str(e)}\n")
+    
+    # Process local paths
+    if storage_config.get("local_paths"):
+        with open(INSTALLER_LOG, "a") as log:
+            log.write(f"Setting up {len(storage_config['local_paths'])} local path(s)...\n")
+            
+        for path, path_info in storage_config["local_paths"].items():
+            # Create directory if it doesn't exist
+            if not os.path.exists(path):
+                try:
+                    os.makedirs(path, exist_ok=True)
+                    # Set permissions based on path_info
+                    permissions = path_info.get("permissions", "0755")
+                    os.chmod(path, int(permissions, 8))
+                    log.write(f"Created local path: {path} with permissions {permissions}\n")
+                    
+                    # Set ownership if specified
+                    if "owner" in path_info:
+                        owner = path_info["owner"]
+                        if ":" in owner:  # Format is user:group
+                            user, group = owner.split(":")
+                            subprocess.run(["chown", f"{user}:{group}", path], check=True)
+                        else:  # Just user
+                            subprocess.run(["chown", owner, path], check=True)
+                        log.write(f"Set ownership of {path} to {owner}\n")
+                except Exception as e:
+                    log.write(f"Failed to create local path {path}: {str(e)}\n")
+    
+    with open(INSTALLER_LOG, "a") as log:
+        log.write("Storage configuration completed\n")
+
+def generate_docker_compose_file():
+    """Generate Docker Compose file using generate-compose.sh script based on user selections"""
+    with open(INSTALLER_LOG, "a") as log:
+        log.write("Generating Docker Compose file...\n")
+    
+    # Path to the generate-compose.sh script
+    generate_script = os.path.join(BASE_DIR, "scripts", "generate-compose.sh")
+    
+    # Make script executable if it isn't already
+    if not os.access(generate_script, os.X_OK):
+        try:
+            os.chmod(generate_script, 0o755)
+        except Exception as e:
+            with open(INSTALLER_LOG, "a") as log:
+                log.write(f"Failed to make generate-compose.sh executable: {str(e)}\n")
+            raise
+    
+    # Build command to run the generate-compose.sh script
+    cmd = [generate_script]
+    
+    # Add output file and environment file parameters
+    cmd.extend(["--output", os.path.join(BASE_DIR, "docker-compose.yml")])
+    cmd.extend(["--env", os.path.join(BASE_DIR, ".env")])
+    
+    # Add services based on user selections
+    # Add arr apps if any arr app is selected
+    if any(services.get("arr_apps", {}).values()):
+        cmd.append("--arr-apps")
+    
+    # Add media server selection
+    for server, enabled in services.get("media_servers", {}).items():
+        if enabled:
+            cmd.extend(["--media-server", server])
+    
+    # Add torrent client
+    for client, enabled in services.get("download_clients", {}).items():
+        if enabled and client in ["transmission", "qbittorrent"]:
+            cmd.extend(["--torrent-client", client])
+            break
+    
+    # Add usenet client
+    for client, enabled in services.get("download_clients", {}).items():
+        if enabled and client in ["nzbget", "sabnzbd"]:
+            cmd.extend(["--usenet-client", client])
+            break
+    
+    # Add direct download if jdownloader is enabled
+    if services.get("download_clients", {}).get("jdownloader", False):
+        cmd.append("--direct-download")
+    
+    # Add utility options
+    if services.get("utilities", {}).get("heimdall", False):
+        cmd.append("--dashboard")
+    
+    if services.get("utilities", {}).get("overseerr", False):
+        cmd.append("--requests")
+    
+    if services.get("utilities", {}).get("tautulli", False):
+        cmd.append("--monitoring")
+    
+    if services.get("utilities", {}).get("nginx_proxy_manager", False):
+        cmd.append("--proxy")
+    
+    # Execute the command
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        with open(INSTALLER_LOG, "a") as log:
+            log.write("Docker Compose file generated successfully\n")
+            log.write(f"Command output: {result.stdout}\n")
+    except subprocess.CalledProcessError as e:
+        with open(INSTALLER_LOG, "a") as log:
+            log.write(f"Failed to generate Docker Compose file: {str(e)}\n")
+            log.write(f"Error output: {e.stderr}\n")
+        raise
+    except Exception as e:
+        with open(INSTALLER_LOG, "a") as log:
+            log.write(f"Failed to generate Docker Compose file: {str(e)}\n")
+        raise
+
 def run_installation():
     try:
         with open(INSTALLER_LOG, "w") as f:
             f.write("Starting installation...\n")
         
-        # Create the .env file
+        # Setup advanced storage configuration based on user choices
+        setup_storage()
+        
+        # Create the .env file with all configured parameters
         create_env_file()
         
-        # Run installation steps
+        # Install dependencies
+        install_dependencies()
+        
+        # Set up Tailscale if enabled
         if config["tailscale_auth_key"]:
             setup_tailscale()
         
-        install_dependencies()
+        # Configure PIA VPN if credentials provided
         setup_pia_vpn()
-        create_docker_compose()
         
-        if config["share_method"] == "samba":
-            setup_usb_and_samba()
-        else:
-            setup_usb_and_nfs()
+        # Generate Docker Compose file using generate-compose.sh
+        generate_docker_compose_file()
         
+        # Set up Docker network
         setup_docker_network()
+        
+        # Deploy Docker Compose stack
         deploy_docker_compose()
         
         # Mark installation as completed

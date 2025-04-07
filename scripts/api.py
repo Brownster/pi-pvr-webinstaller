@@ -209,6 +209,83 @@ def get_system_info():
 # Get docker container status
 def get_container_status():
     containers = {}
+    
+    # Define service type mapping
+    service_types = {
+        "sonarr": "media",
+        "radarr": "media",
+        "lidarr": "media",
+        "readarr": "media",
+        "prowlarr": "media",
+        "bazarr": "media",
+        "transmission": "download",
+        "qbittorrent": "download",
+        "nzbget": "download",
+        "sabnzbd": "download",
+        "jdownloader": "download",
+        "jellyfin": "media",
+        "plex": "media",
+        "emby": "media",
+        "get_iplayer": "download",
+        "heimdall": "utility",
+        "overseerr": "utility",
+        "tautulli": "utility",
+        "portainer": "utility",
+        "nginx": "utility",
+        "gluetun": "utility",
+        "tailscale": "utility"
+    }
+    
+    # Define default web UI ports for services
+    default_ports = {
+        "sonarr": 8989,
+        "radarr": 7878,
+        "lidarr": 8686,
+        "readarr": 8787,
+        "prowlarr": 9696,
+        "bazarr": 6767,
+        "transmission": 9091,
+        "qbittorrent": 8080,
+        "nzbget": 6789,
+        "sabnzbd": 8080,
+        "jdownloader": 5800,
+        "jellyfin": 8096,
+        "plex": 32400,
+        "emby": 8096,
+        "get_iplayer": 1935,
+        "heimdall": 80,
+        "overseerr": 5055,
+        "tautulli": 8181,
+        "portainer": 9000,
+        "nginx": 81
+    }
+    
+    # Service descriptions
+    service_descriptions = {
+        "sonarr": "TV Series Management",
+        "radarr": "Movie Management",
+        "lidarr": "Music Management",
+        "readarr": "Book & Audiobook Management",
+        "prowlarr": "Indexer Management",
+        "bazarr": "Subtitle Management",
+        "transmission": "Torrent Client",
+        "qbittorrent": "Torrent Client",
+        "nzbget": "Usenet Client",
+        "sabnzbd": "Usenet Client",
+        "jdownloader": "Direct Download Client",
+        "jellyfin": "Media Server",
+        "plex": "Media Server",
+        "emby": "Media Server",
+        "get_iplayer": "BBC Content Downloader",
+        "heimdall": "Application Dashboard",
+        "overseerr": "Media Requests",
+        "tautulli": "Plex Monitoring",
+        "portainer": "Docker Management",
+        "nginx": "Reverse Proxy",
+        "gluetun": "VPN Client",
+        "tailscale": "Secure Network"
+    }
+    
     try:
         # Add timeout to prevent hanging
         result = subprocess.run(
@@ -226,6 +303,7 @@ def get_container_status():
                     
                     # Extract port mappings
                     port_mappings = []
+                    web_port = None
                     if ports:
                         port_pattern = r'(\d+\.\d+\.\d+\.\d+:)?(\d+)->(\d+)'
                         matches = re.findall(port_pattern, ports)
@@ -233,24 +311,63 @@ def get_container_status():
                             host_port = match[1]
                             container_port = match[2]
                             port_mappings.append({"host": host_port, "container": container_port})
+                            
+                            # Identify web UI port from mappings
+                            if container_port in ["80", "8080", "8096", "9000", "9091"]:
+                                web_port = host_port
                     
+                    # Determine service type
+                    service_type = "other"
+                    for key in service_types:
+                        if key in name.lower():
+                            service_type = service_types[key]
+                            break
+                    
+                    # Determine service description
+                    description = "Docker container"
+                    for key in service_descriptions:
+                        if key in name.lower():
+                            description = service_descriptions[key]
+                            break
+                    
+                    # Determine web UI URL
+                    url = None
+                    if status == "running":
+                        # Try to find port from mappings first
+                        if web_port:
+                            url = f"http://localhost:{web_port}"
+                        else:
+                            # Use default port if known
+                            for key in default_ports:
+                                if key in name.lower():
+                                    url = f"http://localhost:{default_ports[key]}"
+                                    break
+                    
+                    # Create container info
                     containers[name] = {
                         "status": status,
-                        "ports": port_mappings
+                        "ports": port_mappings,
+                        "type": service_type,
+                        "description": description,
+                        "url": url
                     }
     except subprocess.TimeoutExpired:
         print("Warning: Docker status check timed out after 15 seconds")
         # Return empty dictionary with error status
         containers["error"] = {
             "status": "error",
-            "message": "Docker command timed out"
+            "message": "Docker command timed out",
+            "type": "other",
+            "description": "Error checking Docker status"
         }
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
         print(f"Error getting container status: {str(e)}")
         # Return empty dictionary with error status
         containers["error"] = {
             "status": "error",
-            "message": f"Docker command failed: {str(e)}"
+            "message": f"Docker command failed: {str(e)}",
+            "type": "other",
+            "description": "Error checking Docker status"
         }
     return containers
 
@@ -503,7 +620,34 @@ def run_installation(config, services):
 # API routes
 @app.route('/api/system', methods=['GET'])
 def api_system_info():
-    return jsonify(get_system_info())
+    system_info = get_system_info()
+    
+    # Add CPU temperature for Pi health dashboard
+    try:
+        # Try to get temperature from thermal_zone0
+        if os.path.exists('/sys/class/thermal/thermal_zone0/temp'):
+            with open('/sys/class/thermal/thermal_zone0/temp', 'r') as f:
+                temp = float(f.read().strip()) / 1000.0  # Convert from millidegrees to degrees
+                system_info['temperature_celsius'] = temp
+        
+        # For Raspberry Pi, alternatively try vcgencmd
+        elif os.path.exists('/usr/bin/vcgencmd'):
+            try:
+                temp_output = os.popen("vcgencmd measure_temp").readline()
+                system_info['temperature_celsius'] = float(temp_output.replace("temp=", "").replace("'C\n", ""))
+            except Exception as e:
+                print(f"Error getting temperature from vcgencmd: {e}")
+    except Exception as e:
+        print(f"Error getting CPU temperature: {e}")
+        # Temperature might already be available from get_system_info
+    
+    # Add CPU usage percentage
+    try:
+        system_info['cpu_usage_percent'] = psutil.cpu_percent(interval=0.5)
+    except Exception as e:
+        print(f"Error getting CPU usage: {e}")
+    
+    return jsonify(system_info)
 
 @app.route('/api/drives', methods=['GET'])
 def api_drives():
@@ -577,6 +721,40 @@ def api_status():
     return jsonify({
         "installation_status": config["installation_status"],
         "containers": containers
+    })
+
+@app.route('/api/services', methods=['GET'])
+def api_get_container_services():
+    """Get list of services formatted for the web UI"""
+    containers = get_container_status()
+    
+    # Format containers into a list of services for the UI
+    services = []
+    for name, container in containers.items():
+        if name == "error":
+            continue
+            
+        # Create service object
+        service = {
+            "name": name,
+            "status": container["status"],
+            "type": container.get("type", "other"),
+            "description": container.get("description", ""),
+            "url": container.get("url", None)
+        }
+        
+        # Extract port from URL or use container ports
+        if service["url"] and ":" in service["url"]:
+            service["port"] = service["url"].split(":")[-1]
+        elif container.get("ports") and len(container["ports"]) > 0:
+            service["port"] = container["ports"][0].get("host", "")
+        else:
+            service["port"] = ""
+            
+        services.append(service)
+    
+    return jsonify({
+        "services": services
     })
 
 @app.route('/api/install', methods=['POST'])

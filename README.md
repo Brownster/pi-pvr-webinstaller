@@ -2,6 +2,8 @@
 
 **PI-PVR Ultimate Media Stack** is a comprehensive Docker-based media server solution with an intuitive web-based installer, designed for both Raspberry Pi and x86/x64 Linux systems. It intelligently detects your hardware and configures services optimally for your system. With support for VPN connectivity, secure remote access via Tailscale, and an extensive array of media management tools, it works on everything from a Raspberry Pi to a powerful desktop.
 
+> **Recent Enhancements**: The latest version now includes a complete system health dashboard with temperature monitoring, enhanced container management with proper URL linking for all services, comprehensive storage configuration with support for multiple USB drives, network shares (SMB/CIFS, NFS), and local paths. The modular architecture allows for custom service combinations including full audiobook support via Readarr.
+
 ## Features
 
 ![image](https://github.com/user-attachments/assets/60ce9daf-3f7a-4a59-8ab1-5eb4be74a7a7)
@@ -76,10 +78,13 @@ chmod +x web-ui.sh
 
 This will start the web UI server accessible at `http://<your-pi-ip>:8080` where you can:
 - Configure all settings through an intuitive, mobile-friendly interface
-- Monitor installation progress in real-time with detailed status updates
-- Easily manage your media services after installation with a comprehensive dashboard
+- Select specific Docker containers including support for audiobooks (Readarr)
+- Add multiple USB mounts with flexible configuration options
+- Set up network shares (both SMB/CIFS and NFS) as mount points
+- Configure local folder paths with custom permissions and ownership
+- Manage media services with the comprehensive dashboard
 - Monitor system resource usage with real-time graphs and statistics
-- Configure storage, network, and service settings through a user-friendly interface
+- Monitor installation progress in real-time with detailed status updates
 - View system and container logs with filtering and search capabilities
 - Receive real-time notifications for important events and status changes
 - Update Docker images and containers with a single click

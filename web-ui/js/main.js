@@ -498,11 +498,20 @@ function updateSystemInfo(data) {
 // Update resource usage bars
 function updateResourceUsage(data) {
   // CPU usage
-  const cpuUsage = data.cpu_usage || Math.floor(Math.random() * 30) + 5; // Random value for demo
+  const cpuUsage = data.cpu_usage_percent || Math.floor(Math.random() * 30) + 5; // Random value if CPU usage not available
   const cpuBar = document.getElementById('cpu-usage-bar');
   if (cpuBar) {
     cpuBar.style.width = `${cpuUsage}%`;
     document.getElementById('cpu-usage').textContent = `${cpuUsage}%`;
+    
+    // Update color based on CPU usage
+    if (cpuUsage > 80) {
+      cpuBar.style.backgroundColor = '#e53e3e'; // Red for high usage
+    } else if (cpuUsage > 60) {
+      cpuBar.style.backgroundColor = '#ed8936'; // Orange for medium usage
+    } else {
+      cpuBar.style.backgroundColor = '#38a169'; // Green for low usage
+    }
   }
   
   // Memory usage
@@ -512,6 +521,15 @@ function updateResourceUsage(data) {
     if (memoryBar) {
       memoryBar.style.width = `${memoryUsage}%`;
       document.getElementById('memory-usage').textContent = `${memoryUsage}%`;
+      
+      // Update color based on memory usage
+      if (memoryUsage > 80) {
+        memoryBar.style.backgroundColor = '#e53e3e'; // Red for high usage
+      } else if (memoryUsage > 60) {
+        memoryBar.style.backgroundColor = '#ed8936'; // Orange for medium usage
+      } else {
+        memoryBar.style.backgroundColor = '#38a169'; // Green for low usage
+      }
     }
   }
   
@@ -522,6 +540,37 @@ function updateResourceUsage(data) {
     if (diskBar) {
       diskBar.style.width = `${diskUsage}%`;
       document.getElementById('disk-usage').textContent = `${diskUsage}%`;
+      
+      // Update color based on disk usage
+      if (diskUsage > 90) {
+        diskBar.style.backgroundColor = '#e53e3e'; // Red for high usage
+      } else if (diskUsage > 75) {
+        diskBar.style.backgroundColor = '#ed8936'; // Orange for medium usage
+      } else {
+        diskBar.style.backgroundColor = '#38a169'; // Green for low usage
+      }
+    }
+  }
+  
+  // Temperature
+  if (data.temperature_celsius) {
+    const temp = data.temperature_celsius;
+    const tempBar = document.getElementById('temperature-bar');
+    if (tempBar) {
+      // Convert temperature to percentage (0-100%)
+      // Assume 0°C is 0% and 85°C is 100% (typical throttling temp for Pi)
+      const tempPercentage = Math.min(Math.round((temp / 85) * 100), 100);
+      tempBar.style.width = `${tempPercentage}%`;
+      document.getElementById('temperature').textContent = `${temp.toFixed(1)}°C`;
+      
+      // Update color based on temperature
+      if (temp > 75) {
+        tempBar.style.backgroundColor = '#e53e3e'; // Red for hot
+      } else if (temp > 60) {
+        tempBar.style.backgroundColor = '#ed8936'; // Orange for warm
+      } else {
+        tempBar.style.backgroundColor = '#38a169'; // Green for cool
+      }
     }
   }
 }
